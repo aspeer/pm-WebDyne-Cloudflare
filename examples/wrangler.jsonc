@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "webdyne-cloudflare-d1-example",
+  "compatibility_date": "2026-08-27",
+  "vars": {
+    "WEBDYNE_D1_BINDINGS": "DB"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webdyne-cloudflare-m2",
+      "database_id": "90b2beca-642c-4a54-a3b2-872fbeea5729"
+    }
+  ]
+}

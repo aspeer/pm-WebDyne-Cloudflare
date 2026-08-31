@@ -1,0 +1,8 @@
+Revision history for WebDyne-Cloudflare
+
+0.001  2026-09-01
+    - Initial WebDyne::Cloudflare::D1 prepared-statement facade.
+    - Request-scoped JavaScript D1 host capability adapter.
+    - Explicit BLOB envelopes and strict UTF-8 handling at the Perl/JavaScript
+      boundary.
+    - Perl, JavaScript, PSP, local D1, and non-production remote D1 fixtures.

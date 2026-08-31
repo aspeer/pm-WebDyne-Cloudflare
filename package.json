@@ -1,0 +1,20 @@
+{
+  "name": "@aspeer/webdyne-cloudflare",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "files": [
+    "lib/WebDyne/Cloudflare/d1-host.js",
+    "README.md"
+  ],
+  "exports": {
+    "./d1-host": "./lib/WebDyne/Cloudflare/d1-host.js"
+  },
+  "scripts": {
+    "test": "node --test test-js/*.test.mjs",
+    "smoke:d1": "node tools/smoke-d1.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.0"
+  }
+}

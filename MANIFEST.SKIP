@@ -1,0 +1,12 @@
+^\.git/
+^\.gitignore$
+^\.wrangler/
+^Makefile$
+^MYMETA\.(?:json|yml)$
+^blib/
+^node_modules/
+^pm_to_blib$
+^WebDyne-Cloudflare-.*\.tar\.gz$
+^WebDyne-Cloudflare-[^/]+/
+^examples/worker/\.wrangler/
+^examples/\.wrangler/
