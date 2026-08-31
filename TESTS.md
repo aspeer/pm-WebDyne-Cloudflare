@@ -33,5 +33,9 @@
 - Remote D1 `webdyne-cloudflare-m2` was created in region OC, initialized, and
   queried successfully. Its fixture BLOB was `0001FF` and the query was served
   by the BNE colo.
-- Remote `wrangler dev` was not run because it uploads an ephemeral Worker and
-  requires separate deployment approval. No Worker was deployed.
+- An explicitly approved Wrangler remote preview passed the full smoke suite
+  against that database: HTML, JSON, parameterized insert, failure/recovery,
+  and 24 concurrent reads. The inserted row preserved `D1 bridge O'Brien π`,
+  SQL `NULL`, and BLOB hex `0057656244796E65FF` exactly.
+- The remote preview was stopped cleanly after verification. No persistent
+  Worker was deployed.

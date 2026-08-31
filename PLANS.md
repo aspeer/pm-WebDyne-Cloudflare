@@ -2,7 +2,7 @@
 
 ## Milestone 2: D1 vertical slice
 
-Status: local vertical slice complete; remote Worker execution gated
+Status: complete
 
 Branch: `webdyne-cloudflare/m2-d1-bridge`
 
@@ -16,5 +16,5 @@ Branch: `webdyne-cloudflare/m2-d1-bridge`
 - [x] Prove structured errors and interpreter reuse after a failed query.
 - [x] Run repeated and concurrent request checks.
 - [x] Create and validate the approved non-production remote D1 fixture.
-- [ ] Run the WebDyne Worker against the remote binding after explicit Worker
-  deployment approval.
+- [x] Run the WebDyne Worker against the remote binding using an approved
+  ephemeral Wrangler preview.
