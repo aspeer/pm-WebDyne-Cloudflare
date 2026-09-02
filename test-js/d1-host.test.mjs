@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { D1HostBridge, D1_EXTENSION_NAME, D1_HOST_FUNCTION_NAME, d1BindingNames } from "../lib/WebDyne/Cloudflare/d1-host.js";
+import { D1HostBridge, D1_EXTENSION_NAME, D1_HOST_FUNCTION_NAME, d1BindingNames } from "../js/d1-host.js";
+import { createWebDyneCloudflareExtension } from "../js/cloudflare.js";
 
 function fixture(name = "WebDyne") {
   const calls = [];
@@ -123,4 +124,22 @@ test("rejects a malformed PAGI extension container", () => {
     () => bridge.attachScope({ extensions: [] }, { DB: fixture().database }, ["DB"]),
     /scope extensions must be an object/,
   );
+});
+
+test("exposes the npm extension lifecycle with a fixed D1 allow-list", () => {
+  const extension = createWebDyneCloudflareExtension({ d1Bindings: ["DB"] });
+  const callbacks = new Map();
+  extension.register({
+    registerFunction(name, callback) { callbacks.set(name, callback); },
+  });
+  assert.equal(callbacks.has(D1_HOST_FUNCTION_NAME), true);
+
+  const scope = { extensions: {} };
+  const { database } = fixture();
+  const attachment = extension.attachScope({
+    scope,
+    bindings: { DB: database, SECRET: fixture().database },
+  });
+  assert.deepEqual(scope.extensions[D1_EXTENSION_NAME].bindings, ["DB"]);
+  attachment.release();
 });

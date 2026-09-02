@@ -27,7 +27,6 @@ WriteMakefile(
         'lib/WebDyne/Cloudflare/D1/Blob.pm'      => '$(INST_LIB)/WebDyne/Cloudflare/D1/Blob.pm',
         'lib/WebDyne/Cloudflare/D1/Error.pm'     => '$(INST_LIB)/WebDyne/Cloudflare/D1/Error.pm',
         'lib/WebDyne/Cloudflare/D1/Statement.pm' => '$(INST_LIB)/WebDyne/Cloudflare/D1/Statement.pm',
-        'lib/WebDyne/Cloudflare/d1-host.js'      => '$(INST_LIB)/WebDyne/Cloudflare/d1-host.js',
     },
     META_MERGE => {
         'meta-spec' => { version => 2 },

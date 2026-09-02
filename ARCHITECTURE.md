@@ -22,3 +22,29 @@ the wire request serializable.
 The adapter is Cloudflare-specific and belongs in this distribution. The
 generic asynchronous host-call implementation remains in ZeroPerl and
 `@aspeer/zeroperl-ts`; WebDyne core is unchanged.
+
+## npm extension boundary
+
+The published package keeps source ownership together without merging provider
+code into the portable runtime:
+
+```text
+@webdyne/webdyne-cloudflare
+  webdyne-extension.json       declarative build metadata
+  lib/WebDyne/Cloudflare/*.pm  files mounted at /perl5/lib
+  js/cloudflare.js             runtime extension factory
+  js/d1-host.js                request capability implementation
+```
+
+The ZeroPerl application builder resolves only packages explicitly named by
+`webdyne.extensions` and requires each to be a direct production dependency.
+It reads the exported manifest without executing extension code, packages the
+declared Perl library, and emits a static provider import for Wrangler. At run
+time the portable extension manager registers host functions once per Perl
+interpreter generation, attaches capabilities to a single PAGI scope, and
+executes cleanups once in reverse order.
+
+D1 database identifiers are application/provider configuration and never
+belong in this reusable package. `webdyne.cloudflare.d1Databases` supplies the
+Wrangler bindings while extension `d1Bindings` is the independent security
+allow-list exposed to Perl.

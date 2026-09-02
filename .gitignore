@@ -6,6 +6,7 @@
 /WebDyne-Cloudflare-*.tar.gz
 /WebDyne-Cloudflare-*/
 /node_modules/
+/dist/
 /.wrangler/
 /.dev.vars
 /examples/worker/.wrangler/

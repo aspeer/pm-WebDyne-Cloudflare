@@ -35,3 +35,19 @@ only in the private bridge envelope and decode to Perl bytes.
 Batch, `exec`, read-replication sessions/bookmarks, retry policy, and active
 cancellation wait until the basic request capability and warm-runtime behavior
 are proven end to end.
+
+## D005: Publish one npm-first dual-surface extension
+
+- Status: accepted
+- Date: 2026-09-03
+
+The public artifact is `@webdyne/webdyne-cloudflare`. It contains the Perl
+facades and Cloudflare JavaScript adapter because neither half provides a
+working D1 service alone. A declarative manifest lets the ZeroPerl builder copy
+Perl files and generate static Worker imports without package install hooks or
+implicit dependency scanning. The MakeMaker files remain useful for native
+Perl validation, but CPAN is not the deployment or release channel.
+
+Release artifacts are npm tarballs with SHA-256/source manifests and GitHub
+build-provenance attestations. GitHub Release creation is guarded and
+immutable; npm publication remains a separately qualified operation.

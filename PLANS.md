@@ -18,3 +18,19 @@ Branch: `webdyne-cloudflare/m2-d1-bridge`
 - [x] Create and validate the approved non-production remote D1 fixture.
 - [x] Run the WebDyne Worker against the remote binding using an approved
   ephemeral Wrangler preview.
+
+## Milestone 3: npm extension distribution
+
+Status: complete
+
+Branch: `codex/npm-extension-packaging`
+
+- [x] Package the Perl facades and JavaScript bridge together as
+  `@webdyne/webdyne-cloudflare`.
+- [x] Export declarative WebDyne extension metadata and a Cloudflare lifecycle
+  factory.
+- [x] Validate an exact npm package allow-list.
+- [x] Add guarded GitHub Release and npm-candidate workflows with SHA-256
+  manifests and build-provenance attestations.
+- [x] Integrate through the ZeroPerl extension lifecycle and an independent
+  application consumer.

@@ -1,20 +1,45 @@
 {
-  "name": "@aspeer/webdyne-cloudflare",
-  "version": "0.0.1",
-  "private": true,
+  "name": "@webdyne/webdyne-cloudflare",
+  "version": "1.0.0",
+  "description": "Cloudflare service extensions for WebDyne running under WebAssembly",
   "type": "module",
   "files": [
-    "lib/WebDyne/Cloudflare/d1-host.js",
-    "README.md"
+    "js",
+    "lib",
+    "webdyne-extension.json"
   ],
   "exports": {
-    "./d1-host": "./lib/WebDyne/Cloudflare/d1-host.js"
+    ".": "./js/cloudflare.js",
+    "./cloudflare": "./js/cloudflare.js",
+    "./d1-host": "./js/d1-host.js",
+    "./webdyne-extension.json": "./webdyne-extension.json"
   },
   "scripts": {
-    "test": "node --test test-js/*.test.mjs",
+    "test": "npm run test:perl && npm run test:js",
+    "test:perl": "prove -Ilib t",
+    "test:js": "node --test test-js/*.test.mjs",
+    "pack:check": "node tools/check-package.mjs",
     "smoke:d1": "node tools/smoke-d1.mjs"
   },
+  "sideEffects": false,
+  "keywords": [
+    "webdyne",
+    "cloudflare",
+    "d1",
+    "perl",
+    "webassembly"
+  ],
+  "author": "Andrew Speer",
+  "license": "Artistic-1.0-Perl",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aspeer/pm-WebDyne-Cloudflare.git"
+  },
+  "homepage": "https://github.com/aspeer/pm-WebDyne-Cloudflare#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
-    "wrangler": "^4.127.0"
+    "wrangler": "4.127.1"
   }
 }
