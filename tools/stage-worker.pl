@@ -19,6 +19,13 @@ my @module = qw(
     WebDyne/Cloudflare/D1/Blob.pm
     WebDyne/Cloudflare/D1/Error.pm
     WebDyne/Cloudflare/D1/Statement.pm
+    WebDyne/Cloudflare/KV.pm
+    WebDyne/Cloudflare/KV/Blob.pm
+    WebDyne/Cloudflare/KV/Error.pm
+    WebDyne/Cloudflare/R2.pm
+    WebDyne/Cloudflare/R2/Blob.pm
+    WebDyne/Cloudflare/R2/Error.pm
+    WebDyne/Cloudflare/R2/Object.pm
 );
 for my $relative (@module) {
     my $source = File::Spec->catfile('lib', split m{/}, $relative);
@@ -29,7 +36,7 @@ for my $relative (@module) {
     print "Staged $relative\n";
 }
 
-for my $page (qw(d1.psp d1-api.psp)) {
+for my $page (qw(d1.psp d1-api.psp kv.psp r2.psp)) {
     my $page_source = File::Spec->catfile('examples', 'htdocs', $page);
     my $page_target = File::Spec->catfile($worker, 'htdocs', $page);
     copy($page_source, $page_target)

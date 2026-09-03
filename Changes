@@ -1,5 +1,11 @@
 Revision history for WebDyne-Cloudflare
 
+1.1.0  2026-09-03
+    - Add modular Future-returning Workers KV and buffered R2 Perl facades.
+    - Add independent request-scoped KV and R2 JavaScript capability bridges.
+    - Add generated Wrangler bindings, local/remote PSP smoke fixtures, and
+      explicit memory limits for JSON-bridged storage bodies.
+
 1.0.0  2026-09-03
     - Package Perl facades and JavaScript adapters together as the npm-first
       @webdyne/webdyne-cloudflare extension.

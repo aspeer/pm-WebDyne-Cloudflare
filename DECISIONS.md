@@ -51,3 +51,20 @@ Perl validation, but CPAN is not the deployment or release channel.
 Release artifacts are npm tarballs with SHA-256/source manifests and GitHub
 build-provenance attestations. GitHub Release creation is guarded and
 immutable; npm publication remains a separately qualified operation.
+
+## D006: Keep storage bridges modular and bounded
+
+- Status: accepted
+- Date: 2026-09-03
+
+Workers KV and R2 use independent Perl modules, JavaScript host modules, PAGI
+extension names, capability tokens, and binding allow-lists. Shared code is
+limited to validation, byte-envelope, error, and scope helpers. This keeps the
+public APIs independent while one npm extension can register all host
+functions safely for the persistent interpreter.
+
+The first R2 API buffers object bodies and applies a 16 MiB default bridge
+limit. Streaming and multipart uploads are deferred until the host protocol
+can model backpressure and lifecycle cleanup explicitly. KV uses the same
+default limit even though the provider permits larger values, avoiding large
+base64/JSON amplification in Worker memory.

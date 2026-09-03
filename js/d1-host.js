@@ -125,12 +125,12 @@ export class D1HostBridge {
       if (!isD1Database(env?.[name])) throw new Error(`Configured D1 binding ${name} is unavailable`);
       bindings.set(name, env[name]);
     }
+    if (scope.extensions[EXTENSION_NAME]) throw new Error(`PAGI extension ${EXTENSION_NAME} is already present`);
     const capability = this.#tokenFactory();
     if (typeof capability !== "string" || capability.length < 8 || this.#capabilities.has(capability)) {
       throw new Error("D1 capability token factory returned an invalid or duplicate token");
     }
     this.#capabilities.set(capability, bindings);
-    if (scope.extensions[EXTENSION_NAME]) throw new Error(`PAGI extension ${EXTENSION_NAME} is already present`);
     scope.extensions[EXTENSION_NAME] = {
       version: PROTOCOL_VERSION,
       capability,
@@ -143,6 +143,9 @@ export class D1HostBridge {
         if (released) return;
         released = true;
         this.#capabilities.delete(capability);
+        if (scope.extensions[EXTENSION_NAME]?.capability === capability) {
+          delete scope.extensions[EXTENSION_NAME];
+        }
       },
     };
   }

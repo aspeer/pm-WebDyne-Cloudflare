@@ -5,10 +5,19 @@
 - `t/00-load.t`: load every installed Perl module.
 - `t/01-d1.t`: capability validation, prepared/bound calls, immutable
   statements, BLOB encoding/decoding, Future results, and structured errors.
+- `t/02-kv.t`: KV capability validation, text/JSON/byte operations, metadata,
+  listing, Future results, and structured errors.
+- `t/03-r2.t`: R2 capability validation, object metadata, byte bodies, ranges,
+  listing, single/multiple delete, Future results, and structured errors.
 - `test-js/d1-host.test.mjs`: binding allow-list, capability lifecycle,
   prepared calls, BLOB conversion, result modes, registration, errors, and the
   npm extension wrapper.
-- `tools/check-package.mjs`: exact npm identity and eleven-file public package
+- `test-js/kv-host.test.mjs` and `test-js/r2-host.test.mjs`: independent
+  binding allow-lists, capability lifecycle, provider option mapping, byte
+  limits, registration, and errors.
+- `test-js/cloudflare.test.mjs`: combined lifecycle without merging the three
+  service capabilities.
+- `tools/check-package.mjs`: exact npm identity and 21-file public package
   allow-list.
 
 ## Integration gates
@@ -20,6 +29,9 @@
 - failed query followed by a successful warm-interpreter query
 - repeated and concurrent request batches
 - the same fixture against the non-production remote D1 database
+- generated-Worker KV and R2 PSP smokes against isolated local Wrangler state
+- the KV smoke against an isolated remote namespace, followed by key cleanup
+  verification
 
 ## 2026-09-01 initial vertical slice
 
@@ -57,3 +69,21 @@
   native `wdrender` is not applicable because the page deliberately requires
   a request-scoped Cloudflare D1 capability; the live Worker is its rendering
   gate.
+
+## 2026-09-03 KV and R2 storage integration
+
+- MakeMaker/Perl: 60 assertions passed across the D1, KV, and R2 modules.
+- JavaScript: 21 tests passed across the combined lifecycle and all three
+  modular service bridges.
+- The ZeroPerl package's 12 application-builder tests passed, including exact
+  generated `kv_namespaces` and `r2_buckets` configuration.
+- `kv.psp` and `r2.psp` passed `wdlint` against the WebDyne development tree.
+- A generated Perl 5.44.0 Worker passed KV text, metadata, listing, binary
+  round-trip, and deletion against local Wrangler storage. The same Worker
+  passed R2 binary put/get, HTTP/custom metadata, head, list, and deletion.
+- The KV suite passed against isolated remote namespace
+  `webdyne-cloudflare-kv-smoke`; a direct prefix listing after the suite was
+  empty, proving cleanup.
+- Remote R2 qualification is pending because Cloudflare returned error 10042:
+  R2 is not enabled for the attached account. No service terms were accepted
+  and no remote bucket was created.

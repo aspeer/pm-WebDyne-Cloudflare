@@ -34,3 +34,20 @@ Branch: `codex/npm-extension-packaging`
   manifests and build-provenance attestations.
 - [x] Integrate through the ZeroPerl extension lifecycle and an independent
   application consumer.
+
+## Milestone 4: KV and R2 storage facades
+
+Status: complete (remote R2 qualification pending account enablement)
+
+Branch: `codex/kv-r2-storage`
+
+- [x] Add independent Future-returning KV and buffered R2 Perl modules.
+- [x] Add modular JavaScript KV and R2 bridges with request-scoped
+  capabilities, explicit allow-lists, and byte limits.
+- [x] Generate Wrangler KV namespace and R2 bucket bindings from package.json.
+- [x] Add isolated Perl, JavaScript, and PSP smoke tests.
+- [x] Pass the full KV and R2 flow against local Wrangler storage.
+- [x] Pass text, metadata, list, binary, delete, and cleanup checks against an
+  isolated remote KV namespace.
+- [ ] Repeat the R2 smoke against a remote bucket after R2 is enabled for the
+  attached Cloudflare account.

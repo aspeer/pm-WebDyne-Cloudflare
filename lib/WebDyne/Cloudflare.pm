@@ -4,7 +4,7 @@ use 5.020;
 use strict;
 use warnings;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 1;
 
@@ -17,6 +17,8 @@ WebDyne::Cloudflare - Cloudflare service capabilities for WebDyne::PAGI
 =head1 SYNOPSIS
 
   use WebDyne::Cloudflare::D1;
+  use WebDyne::Cloudflare::KV;
+  use WebDyne::Cloudflare::R2;
 
 =head1 DESCRIPTION
 

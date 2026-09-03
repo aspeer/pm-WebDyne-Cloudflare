@@ -27,6 +27,13 @@ WriteMakefile(
         'lib/WebDyne/Cloudflare/D1/Blob.pm'      => '$(INST_LIB)/WebDyne/Cloudflare/D1/Blob.pm',
         'lib/WebDyne/Cloudflare/D1/Error.pm'     => '$(INST_LIB)/WebDyne/Cloudflare/D1/Error.pm',
         'lib/WebDyne/Cloudflare/D1/Statement.pm' => '$(INST_LIB)/WebDyne/Cloudflare/D1/Statement.pm',
+        'lib/WebDyne/Cloudflare/KV.pm'           => '$(INST_LIB)/WebDyne/Cloudflare/KV.pm',
+        'lib/WebDyne/Cloudflare/KV/Blob.pm'      => '$(INST_LIB)/WebDyne/Cloudflare/KV/Blob.pm',
+        'lib/WebDyne/Cloudflare/KV/Error.pm'     => '$(INST_LIB)/WebDyne/Cloudflare/KV/Error.pm',
+        'lib/WebDyne/Cloudflare/R2.pm'           => '$(INST_LIB)/WebDyne/Cloudflare/R2.pm',
+        'lib/WebDyne/Cloudflare/R2/Blob.pm'      => '$(INST_LIB)/WebDyne/Cloudflare/R2/Blob.pm',
+        'lib/WebDyne/Cloudflare/R2/Error.pm'     => '$(INST_LIB)/WebDyne/Cloudflare/R2/Error.pm',
+        'lib/WebDyne/Cloudflare/R2/Object.pm'    => '$(INST_LIB)/WebDyne/Cloudflare/R2/Object.pm',
     },
     META_MERGE => {
         'meta-spec' => { version => 2 },
@@ -39,7 +46,7 @@ sub MY::postamble {
 
 WORKER_DIR ?= ../wasm-WebDyne-PAGI
 
-.PHONY: test_js d1_local_init d1_local_query d1_smoke worker_stage
+.PHONY: test_js d1_local_init d1_local_query d1_smoke kv_smoke r2_smoke worker_stage
 
 test_js:
 	$(NOECHO) npm test
@@ -55,6 +62,12 @@ d1_local_query:
 
 d1_smoke:
 	$(NOECHO) npm run smoke:d1 -- $(ARGS)
+
+kv_smoke:
+	$(NOECHO) npm run smoke:kv -- $(ARGS)
+
+r2_smoke:
+	$(NOECHO) npm run smoke:r2 -- $(ARGS)
 
 worker_stage:
 	$(NOECHO) $(PERL) tools/stage-worker.pl "$(WORKER_DIR)"

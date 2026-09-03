@@ -1,6 +1,6 @@
 {
   "name": "@webdyne/webdyne-cloudflare",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Cloudflare service extensions for WebDyne running under WebAssembly",
   "type": "module",
   "files": [
@@ -12,6 +12,8 @@
     ".": "./js/cloudflare.js",
     "./cloudflare": "./js/cloudflare.js",
     "./d1-host": "./js/d1-host.js",
+    "./kv-host": "./js/kv-host.js",
+    "./r2-host": "./js/r2-host.js",
     "./webdyne-extension.json": "./webdyne-extension.json"
   },
   "scripts": {
@@ -19,13 +21,17 @@
     "test:perl": "prove -Ilib t",
     "test:js": "node --test test-js/*.test.mjs",
     "pack:check": "node tools/check-package.mjs",
-    "smoke:d1": "node tools/smoke-d1.mjs"
+    "smoke:d1": "node tools/smoke-d1.mjs",
+    "smoke:kv": "node tools/smoke-kv.mjs",
+    "smoke:r2": "node tools/smoke-r2.mjs"
   },
   "sideEffects": false,
   "keywords": [
     "webdyne",
     "cloudflare",
     "d1",
+    "kv",
+    "r2",
     "perl",
     "webassembly"
   ],
