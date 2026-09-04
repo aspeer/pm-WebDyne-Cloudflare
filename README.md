@@ -63,14 +63,14 @@ request finishes.
 ```perl
 use WebDyne::Cloudflare::D1;
 
-my $db = WebDyne::Cloudflare::D1->new(
+my $db_or=WebDyne::Cloudflare::D1->new(
     scope   => $self->r()->{'scope'},
     binding => 'DB',
 );
 
-$db->prepare('INSERT INTO thing(name, payload) VALUES (?1, ?2)')
+$db_or->prepare('INSERT INTO thing(name, payload) VALUES (?1, ?2)')
    ->bind('example', WebDyne::Cloudflare::D1->blob($bytes))->run()->get();
-my $row = $db->prepare('SELECT * FROM thing WHERE name = ?1 LIMIT 1')
+my $row_hr=$db_or->prepare('SELECT * FROM thing WHERE name = ?1 LIMIT 1')
              ->bind('example')->first()->get();
 ```
 
@@ -84,14 +84,14 @@ are supported. Errors fail with `WebDyne::Cloudflare::D1::Error`.
 ```perl
 use WebDyne::Cloudflare::KV;
 
-my $kv = WebDyne::Cloudflare::KV->new(
+my $kv_or=WebDyne::Cloudflare::KV->new(
     scope   => $self->r()->{'scope'},
     binding => 'CACHE',
 );
 
-$kv->put('greeting', 'hello', metadata => { source => 'WebDyne' })->get();
-my $entry = $kv->get_with_metadata('greeting')->get();
-my $keys  = $kv->list(prefix => 'greet')->get();
+$kv_or->put('greeting', 'hello', metadata => { source => 'WebDyne' })->get();
+my $entry_hr=$kv_or->get_with_metadata('greeting')->get();
+my $keys_hr=$kv_or->list(prefix => 'greet')->get();
 ```
 
 `get`, `get_with_metadata`, `put`, `put_json`, `delete`, and `list` return
@@ -104,18 +104,18 @@ Errors use `WebDyne::Cloudflare::KV::Error`.
 ```perl
 use WebDyne::Cloudflare::R2;
 
-my $r2 = WebDyne::Cloudflare::R2->new(
+my $r2_or=WebDyne::Cloudflare::R2->new(
     scope   => $self->r()->{'scope'},
     binding => 'ASSETS',
 );
 
-$r2->put(
+$r2_or->put(
     'reports/latest.bin',
     WebDyne::Cloudflare::R2->blob($bytes),
     http_metadata   => { content_type => 'application/octet-stream' },
     custom_metadata => { source => 'WebDyne' },
 )->get();
-my $object = $r2->get('reports/latest.bin')->get();
+my $object_or=$r2_or->get('reports/latest.bin')->get();
 ```
 
 `get`, `head`, `put`, `delete`, `delete_many`, and `list` return `Future`
@@ -129,6 +129,40 @@ surface.
 Unflagged non-ASCII Perl text is decoded strictly as UTF-8 before it crosses
 the bridge. Invalid byte strings must use the service's explicit `blob`
 wrapper; returned binary values become ordinary Perl byte strings.
+
+## Source and documentation layout
+
+Perl modules and their maintained Markdown API sidecars live under `lib`.
+Perl tests and PSP fixtures live under `t`; JavaScript tests, smoke runners
+and package checks live under `t.js`. Public methods keep their names;
+unpublished helpers use ordinary names without a leading underscore.
+See [the API overview](lib/WebDyne/Cloudflare.pm.md).
+
+## Try the examples
+
+`examples/app` contains user-facing D1, KV and R2 pages. They are not smoke
+fixtures and are never copied into a test Worker. The D1 example is read-only;
+the KV/R2 examples write a fixed greeting only when their form is submitted.
+These are local demonstrations, not authenticated public applications.
+
+Stage into a new directory (existing destinations are refused):
+
+```sh
+perl tools/stage-worker.pl /tmp/webdyne-cloudflare-example
+cd /tmp/webdyne-cloudflare-example
+npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
+npm run build
+npm run check
+npx wrangler d1 execute DB --local --config .webdyne/wrangler.jsonc --file schema.sql
+npm run dev
+```
+
+Open `/d1.psp`, `/d1-api/row/1`, `/kv.psp`, or `/r2.psp`.
+Use the generated Wrangler configuration path printed by the build command if
+your runtime version uses a different build layout. All sources are installed
+from local tarballs; no CDN loader is involved. The checked-in resource
+identifiers are placeholders for local use. Provision and configure real
+resources deliberately before any remote execution.
 
 ## Host adapter
 
@@ -168,11 +202,11 @@ make r2_smoke ARGS=http://127.0.0.1:8790/
 
 `npm test` is the canonical contract test and runs both Perl and JavaScript
 suites. The D1 targets use the checked-in local schema and configuration.
-Storage integration uses `tools/prepare-storage-smoke.mjs` with local runtime
-and extension tarballs to generate an independent Worker consumer. Its
-`kv.psp` and `r2.psp` pages exercise the real Perl, WASM, JavaScript, and
-Wrangler storage path. Use `--remote true` with the corresponding namespace ID
-or bucket name only when deliberately testing a remote resource.
+Integration uses `t.js/prepare-storage-smoke.mjs` with local runtime
+and extension tarballs to generate an independent Worker consumer. Its dedicated `t/fixtures/app`
+pages exercise the real Perl, WASM, JavaScript, and
+Wrangler storage path. Use `--remote true` with the corresponding namespace ID,
+database ID or bucket name only when deliberately testing a remote resource.
 
 The current surfaces intentionally exclude D1 batch/session APIs, R2 streaming
 and multipart uploads, cross-service retries, and active cancellation.

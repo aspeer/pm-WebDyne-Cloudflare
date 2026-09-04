@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME             => 'WebDyne::Cloudflare',
     VERSION_FROM     => 'lib/WebDyne/Cloudflare.pm',
-    ABSTRACT_FROM    => 'lib/WebDyne/Cloudflare.pm',
+    ABSTRACT         => 'Cloudflare service capabilities for WebDyne::PAGI',
     AUTHOR           => 'Andrew Speer <andrew.speer@isolutions.com.au>',
     LICENSE          => 'perl_5',
     MIN_PERL_VERSION => '5.020',
@@ -44,21 +44,21 @@ WriteMakefile(
 sub MY::postamble {
     return <<'MAKE_FRAG';
 
-WORKER_DIR ?= ../wasm-WebDyne-PAGI
+WORKER_DIR ?= /tmp/webdyne-cloudflare-example
 
 .PHONY: test_js d1_local_init d1_local_query d1_smoke kv_smoke r2_smoke worker_stage
 
 test_js:
-	$(NOECHO) npm test
+	$(NOECHO) npm run test:js
 
 test :: test_js
 
 d1_local_init:
 	$(NOECHO) npm install
-	$(NOECHO) npx wrangler d1 execute DB --local --config examples/wrangler.jsonc --file examples/schema.sql
+	$(NOECHO) npx wrangler d1 execute DB --local --config t/fixtures/wrangler.jsonc --file t/fixtures/schema.sql
 
 d1_local_query:
-	$(NOECHO) npx wrangler d1 execute DB --local --config examples/wrangler.jsonc --command "SELECT id, name, note FROM webdyne_d1_example ORDER BY id"
+	$(NOECHO) npx wrangler d1 execute DB --local --config t/fixtures/wrangler.jsonc --command "SELECT id, name, note FROM webdyne_d1_example ORDER BY id"
 
 d1_smoke:
 	$(NOECHO) npm run smoke:d1 -- $(ARGS)
@@ -71,8 +71,6 @@ r2_smoke:
 
 worker_stage:
 	$(NOECHO) $(PERL) tools/stage-worker.pl "$(WORKER_DIR)"
-	$(NOECHO) cd "$(WORKER_DIR)" && npm run build:perl-lib-vfs
-	$(NOECHO) cd "$(WORKER_DIR)" && npm run build:perl-vfs
 
 MAKE_FRAG
 }

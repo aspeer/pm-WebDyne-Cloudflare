@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS webdyne_d1_example (
 DELETE FROM webdyne_d1_example;
 
 INSERT INTO webdyne_d1_example (name, note, payload)
-VALUES ('WebDyne example', 'A prepared D1 query from a PSP page', X'0001FF');
+VALUES ('Milestone 2', 'WebDyne::Cloudflare::D1 fixture', X'0001FF');

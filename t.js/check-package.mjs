@@ -35,7 +35,9 @@ const expected = [
   "lib/WebDyne/Cloudflare/R2/Object.pm",
   "package.json",
   "webdyne-extension.json",
-].sort();
+];
+expected.push(...expected.filter((path) => path.endsWith(".pm")).map((path) => `${path}.md`));
+expected.sort();
 
 try {
   assert.equal(packageJson.name, "@webdyne/webdyne-cloudflare");

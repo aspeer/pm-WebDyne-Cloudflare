@@ -51,3 +51,15 @@ Branch: `codex/kv-r2-storage`
   isolated remote KV namespace.
 - [ ] Repeat the R2 smoke against a remote bucket after R2 is enabled for the
   attached Cloudflare account.
+
+## Cloudflare review and layout refactor
+
+Branch: `codex/cloudflare-style-test-layout`
+
+- [x] Clarify mixed precedence and apply the Perl house style.
+- [x] Separate user examples from test-owned PSP/SQL fixtures.
+- [x] Move JavaScript tests and smoke helpers into `t.js`.
+- [x] Fix D1 column/envelope collisions, binary validation, registration retry,
+  KV read limits and unread R2 body cleanup.
+- [x] Add focused regression tests and Markdown API sidecars.
+- [x] Complete local Perl 5.44 Worker verification and final packaging review.

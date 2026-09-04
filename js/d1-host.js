@@ -152,7 +152,6 @@ export class D1HostBridge {
 
   register(perl) {
     if (this.#registeredPerls.has(perl)) return;
-    this.#registeredPerls.add(perl);
     perl.registerFunction(HOST_FUNCTION_NAME, async (requestValue) => {
       let response;
       try {
@@ -162,6 +161,7 @@ export class D1HostBridge {
       }
       return perl.createString(JSON.stringify(response));
     });
+    this.#registeredPerls.add(perl);
   }
 
   async dispatch(request) {

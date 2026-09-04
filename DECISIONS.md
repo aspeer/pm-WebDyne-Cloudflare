@@ -68,3 +68,18 @@ limit. Streaming and multipart uploads are deferred until the host protocol
 can model backpressure and lifecycle cleanup explicitly. KV uses the same
 default limit even though the provider permits larger values, avoiding large
 base64/JSON amplification in Worker memory.
+
+## D007: Separate examples, test fixtures and language-specific runners
+
+- Status: accepted
+- Date: 2026-09-05
+
+User-facing PSP examples belong in `examples/app`. Perl and related PSP/SQL
+fixtures belong in `t`, and JavaScript tests and smoke tooling in `t.js`.
+Smoke staging never imports example files. The example staging helper now
+creates an independent application in a new destination instead of modifying a
+sibling runtime checkout. Existing destinations are refused.
+
+Perl API documentation is maintained in `.pm.md` sidecars, with no independent
+hand-maintained POD copy. MakeMaker uses an explicit abstract. Sidecars ship
+in the npm/source distributions; no documentation converter is introduced.

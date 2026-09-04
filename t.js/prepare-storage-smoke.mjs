@@ -25,13 +25,13 @@ const destination = resolve(configured.destination);
 const runtimeTarball = await realpath(configured["runtime-tarball"]);
 const extensionTarball = await realpath(configured["extension-tarball"]);
 const remote = configured.remote === "true";
-const services = (configured.services ?? "kv,r2").split(",").map((value) => value.trim()).filter(Boolean);
+const services = (configured.services ?? "d1,kv,r2").split(",").map((value) => value.trim()).filter(Boolean);
 if (configured.remote !== undefined && !/^(?:true|false)$/.test(configured.remote)) {
   throw new Error("--remote must be true or false");
 }
-if (services.length === 0 || services.some((service) => !["kv", "r2"].includes(service))
+if (services.length === 0 || services.some((service) => !["d1", "kv", "r2"].includes(service))
   || new Set(services).size !== services.length) {
-  throw new Error("--services must be kv, r2, or kv,r2");
+  throw new Error("--services must be a comma-separated subset of d1,kv,r2");
 }
 if (remote && services.includes("kv") && !configured["kv-namespace-id"]) {
   throw new Error("Remote KV smoke requires --kv-namespace-id");
@@ -40,9 +40,17 @@ if (remote && services.includes("r2") && !configured["r2-bucket-name"]) {
   throw new Error("Remote R2 smoke requires --r2-bucket-name");
 }
 
-await mkdir(resolve(destination, "app"), { recursive: true });
+if (remote && services.includes("d1") && !configured["d1-database-id"]) {
+  throw new Error("Remote D1 smoke requires --d1-database-id");
+}
+await mkdir(destination);
+await mkdir(resolve(destination, "app"));
 for (const page of services.map((service) => `${service}.psp`)) {
-  await cp(resolve(root, "examples/htdocs", page), resolve(destination, "app", page));
+  await cp(resolve(root, "t/fixtures/app", page), resolve(destination, "app", page));
+}
+if (services.includes("d1")) {
+  await cp(resolve(root, "t/fixtures/app/d1-api.psp"), resolve(destination, "app/d1-api.psp"));
+  await cp(resolve(root, "t/fixtures/schema.sql"), resolve(destination, "schema.sql"));
 }
 const packageJson = {
   name: "webdyne-cloudflare-storage-smoke",
@@ -62,12 +70,19 @@ const packageJson = {
     entry: `${services[0]}.psp`,
     extensions: {
       "@webdyne/webdyne-cloudflare": {
+        ...(services.includes("d1") ? { d1Bindings: ["DB"] } : {}),
         ...(services.includes("kv") ? { kvBindings: ["CACHE"] } : {}),
         ...(services.includes("r2") ? { r2Bindings: ["OBJECTS"] } : {}),
       },
     },
     cloudflare: {
       name: "webdyne-cloudflare-storage-smoke",
+      ...(services.includes("d1") ? { d1Databases: [{
+          binding: "DB",
+          databaseName: "webdyne-cloudflare-smoke",
+          databaseId: remote ? configured["d1-database-id"] : "00000000-0000-0000-0000-000000000001",
+          ...(remote ? { remote: true } : {}),
+        }] } : {}),
       ...(services.includes("kv") ? { kvNamespaces: [{
           binding: "CACHE",
           ...(remote ? { namespaceId: configured["kv-namespace-id"], remote: true } : {}),

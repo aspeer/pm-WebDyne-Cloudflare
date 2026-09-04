@@ -19,11 +19,11 @@
   "scripts": {
     "test": "npm run test:perl && npm run test:js",
     "test:perl": "prove -Ilib t",
-    "test:js": "node --test test-js/*.test.mjs",
-    "pack:check": "node tools/check-package.mjs",
-    "smoke:d1": "node tools/smoke-d1.mjs",
-    "smoke:kv": "node tools/smoke-kv.mjs",
-    "smoke:r2": "node tools/smoke-r2.mjs"
+    "test:js": "node --test t.js/*.test.mjs",
+    "pack:check": "node t.js/check-package.mjs",
+    "smoke:d1": "node t.js/smoke-d1.mjs",
+    "smoke:kv": "node t.js/smoke-kv.mjs",
+    "smoke:r2": "node t.js/smoke-r2.mjs"
   },
   "sideEffects": false,
   "keywords": [

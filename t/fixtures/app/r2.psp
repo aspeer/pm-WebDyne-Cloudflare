@@ -8,53 +8,53 @@ __PERL__
 use WebDyne::Cloudflare::R2;
 
 sub r2_smoke {
-    my ($self) = @_;
-    my $cgi = $self->CGI();
-    my $action = scalar($cgi->param('action')) // '';
-    my $key = scalar($cgi->param('key')) // '';
+    my ($self)=@_;
+    my $cgi_or=$self->CGI();
+    my $action=scalar($cgi_or->param('action')) // '';
+    my $key=scalar($cgi_or->param('key')) // '';
     die "Invalid R2 smoke action\n"
         unless $action =~ /\A(?:put|get|head|list|delete)\z/;
     die "Invalid R2 smoke key\n"
         unless $key =~ /\Awebdyne-smoke\/[a-z0-9-]{8,80}\.bin\z/;
 
-    my $r2 = WebDyne::Cloudflare::R2->new(
+    my $r2_or=WebDyne::Cloudflare::R2->new(
         scope   => $self->r()->{'scope'},
         binding => 'OBJECTS',
     );
-    my $expected = "\0WebDyne R2\xff";
+    my $expected="\0WebDyne R2\xff";
 
     if ($action eq 'put') {
-        my $stored = $r2->put(
+        my $stored_or=$r2_or->put(
             $key,
             WebDyne::Cloudflare::R2->blob($expected),
             http_metadata => { content_type => 'application/octet-stream' },
             custom_metadata => { suite => 'WebDyne::Cloudflare::R2' },
         )->get();
-        die "R2 smoke put returned no object\n" unless $stored && $stored->size() == length($expected);
+        die "R2 smoke put returned no object\n" unless ($stored_or&&($stored_or->size()==length($expected)));
     }
     elsif ($action eq 'get') {
-        my $object = $r2->get($key)->get();
+        my $object_or=$r2_or->get($key)->get();
         die "R2 smoke body does not match\n"
-            unless $object && defined($object->body()) && $object->body() eq $expected;
+            unless ($object_or&&defined($object_or->body())&&($object_or->body() eq $expected));
         die "R2 smoke metadata does not match\n"
-            unless ($object->http_metadata()->{'content_type'} // '') eq 'application/octet-stream'
-                && ($object->custom_metadata()->{'suite'} // '') eq 'WebDyne::Cloudflare::R2';
+            unless ($object_or->http_metadata()->{'content_type'} // '') eq 'application/octet-stream'
+                && ($object_or->custom_metadata()->{'suite'} // '') eq 'WebDyne::Cloudflare::R2';
     }
     elsif ($action eq 'head') {
-        my $object = $r2->head($key)->get();
-        die "R2 smoke head returned no object\n" unless $object && $object->size() == length($expected);
+        my $object_or=$r2_or->head($key)->get();
+        die "R2 smoke head returned no object\n" unless ($object_or&&($object_or->size()==length($expected)));
     }
     elsif ($action eq 'list') {
-        my $result = $r2->list(
+        my $result_hr=$r2_or->list(
             prefix => $key,
             limit => 10,
             include => ['customMetadata'],
         )->get();
-        my $found = grep { $_->key() eq $key } @{$result->{'objects'} // []};
+        my $found=grep { $_->key() eq $key } @{$result_hr->{'objects'} // []};
         die "R2 smoke object is not listed\n" unless $found;
     }
     else {
-        $r2->delete($key)->get();
+        $r2_or->delete($key)->get();
     }
     return $self->render(action => $action);
 }

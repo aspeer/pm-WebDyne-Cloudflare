@@ -115,9 +115,17 @@ export class KVHostBridge {
     };
   }
 
+  checkReadValue(value, type) {
+    if (value === null) return value;
+    const size = type === "bytes"
+      ? value.byteLength
+      : new TextEncoder().encode(type === "json" ? JSON.stringify(value) : value).byteLength;
+    if (size > this.#maxValueBytes) throw new RangeError("KV value exceeds the configured byte limit");
+    return type === "bytes" ? encodeBytes(value) : value;
+  }
+
   register(perl) {
     if (this.#registeredPerls.has(perl)) return;
-    this.#registeredPerls.add(perl);
     perl.registerFunction(HOST_FUNCTION_NAME, async (requestValue) => {
       let response;
       try {
@@ -127,6 +135,7 @@ export class KVHostBridge {
       }
       return perl.createString(JSON.stringify(response));
     });
+    this.#registeredPerls.add(perl);
   }
 
   async dispatch(request) {
@@ -144,9 +153,9 @@ export class KVHostBridge {
       const result = request.operation === "get"
         ? await namespace.get(key(request.key), options.cloudflare)
         : await namespace.getWithMetadata(key(request.key), options.cloudflare);
-      if (request.operation === "get") return options.type === "bytes" ? encodeBytes(result) : result;
+      if (request.operation === "get") return this.checkReadValue(result, options.type);
       return result === null ? null : {
-        value: options.type === "bytes" ? encodeBytes(result.value) : result.value,
+        value: this.checkReadValue(result.value, options.type),
         metadata: result.metadata ?? null,
         ...(result.cacheStatus === undefined ? {} : { cache_status: result.cacheStatus }),
       };

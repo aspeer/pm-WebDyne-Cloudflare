@@ -6,19 +6,21 @@ use warnings;
 use Future::AsyncAwait;
 use JSON::PP ();
 
-our $VERSION = '0.001';
+our $VERSION='0.001';
 
 sub new {
-    my ($class, %opt) = @_;
-    return bless {
+    my ($class, %opt)=@_;
+    my $self=bless({
         database => $opt{'database'},
         sql      => $opt{'sql'},
-        params   => $opt{'params'} // [],
-    }, $class;
+        params   => (defined($opt{'params'}) ? $opt{'params'} : []),
+    }, $class);
+    return $self;
 }
 
+
 sub bind {
-    my ($self, @param) = @_;
+    my ($self, @param)=@_;
     return ref($self)->new(
         database => $self->{'database'},
         sql      => $self->{'sql'},
@@ -26,38 +28,42 @@ sub bind {
     );
 }
 
+
 async sub run {
-    my ($self) = @_;
-    return await $self->{'database'}->_execute(
+    my ($self)=@_;
+    return await $self->{'database'}->execute(
         operation => 'run',
         sql       => $self->{'sql'},
         params    => $self->{'params'},
     );
 }
 
+
 async sub all {
-    my ($self) = @_;
+    my ($self)=@_;
     return await $self->run();
 }
 
+
 async sub first {
-    my ($self, $column) = @_;
-    my %request = (
+    my ($self, $column)=@_;
+    my %request=(
         operation => 'first',
         sql       => $self->{'sql'},
         params    => $self->{'params'},
     );
-    $request{'column'} = $column if defined $column;
-    return await $self->{'database'}->_execute(%request);
+    $request{'column'}=$column if defined($column);
+    return await $self->{'database'}->execute(%request);
 }
 
+
 async sub raw {
-    my ($self, %opt) = @_;
-    return await $self->{'database'}->_execute(
+    my ($self, %opt)=@_;
+    return await $self->{'database'}->execute(
         operation    => 'raw',
         sql          => $self->{'sql'},
         params       => $self->{'params'},
-        column_names => $opt{'column_names'} ? JSON::PP::true : JSON::PP::false,
+        column_names => $opt{'column_names'} ? JSON::PP::true() : JSON::PP::false(),
     );
 }
 

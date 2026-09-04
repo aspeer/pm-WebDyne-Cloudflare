@@ -5,18 +5,18 @@ import assert from "node:assert/strict";
 const root = new URL(process.argv[2] ?? "http://127.0.0.1:8790/");
 
 async function request(path, expectedStatus = 200) {
-  const response = await fetch(new URL(path, root));
+  const response = await fetch(new URL(path, root), { signal: AbortSignal.timeout(30_000) });
   const body = await response.text();
   assert.equal(response.status, expectedStatus, `${path} returned ${response.status}: ${body.slice(0, 500)}`);
   return { response, body };
 }
 
-const initial = await request("/");
+const initial = await request("/d1.psp");
 assert.match(initial.body, /Milestone 2/);
 assert.match(initial.body, /Payload bytes<\/dt><dd>3/);
 
 const insertedName = "D1 bridge O'Brien π";
-const insertUrl = new URL("/", root);
+const insertUrl = new URL("/d1.psp", root);
 insertUrl.searchParams.set("action", "insert");
 insertUrl.searchParams.set("name", insertedName);
 const inserted = await request(insertUrl);
@@ -34,14 +34,17 @@ assert.deepEqual(JSON.parse(api.body), {
   payload_length: 3,
 });
 
-const failed = await request("/?action=fail", 500);
+const shape = await request("/d1-api/shape");
+assert.deepEqual(JSON.parse(shape.body), { type: "blob", base64: "AAH/", count: 0 });
+
+const failed = await request("/d1.psp?action=fail", 500);
 assert.match(failed.body, /D1_ERROR/);
 assert.match(failed.body, /deliberately_missing_table/);
 
-const recovered = await request("/");
+const recovered = await request("/d1.psp");
 assert.match(recovered.body, /Milestone 2/);
 
-const concurrent = await Promise.all(Array.from({ length: 24 }, () => request("/")));
+const concurrent = await Promise.all(Array.from({ length: 24 }, () => request("/d1.psp")));
 for (const result of concurrent) assert.match(result.body, /Milestone 2/);
 
 console.log(`WebDyne D1 smoke OK (HTML, JSON, insert, recovery, ${concurrent.length} concurrent reads)`);

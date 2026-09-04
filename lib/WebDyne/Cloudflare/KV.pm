@@ -12,201 +12,201 @@ use Scalar::Util qw(blessed);
 use WebDyne::Cloudflare::KV::Blob;
 use WebDyne::Cloudflare::KV::Error;
 
-our $VERSION = '0.001';
+our $VERSION='0.001';
 our $HOST_CALL;
 
 use constant EXTENSION_NAME => 'webdyne.cloudflare.kv';
 use constant PROTOCOL_VERSION => 1;
 
-my $JSON = JSON::PP->new->canonical->allow_nonref;
+my $json_or=JSON::PP->new()->canonical()->allow_nonref();
 
 sub new {
-    my ($class, %opt) = @_;
-    my $scope = $opt{'scope'};
+    my ($class, %opt)=@_;
+    my $scope_hr=$opt{'scope'};
     die "WebDyne::Cloudflare::KV requires a PAGI scope hash\n"
-        unless ref($scope) eq 'HASH';
-    my $extension = ref($scope->{'extensions'}) eq 'HASH'
-        ? $scope->{'extensions'}{EXTENSION_NAME()}
+        unless ref($scope_hr) eq 'HASH';
+    my $extension_hr=(ref($scope_hr->{'extensions'}) eq 'HASH')
+        ? $scope_hr->{'extensions'}{EXTENSION_NAME()}
         : undef;
     die "PAGI scope has no " . EXTENSION_NAME() . " capability\n"
-        unless ref($extension) eq 'HASH';
+        unless ref($extension_hr) eq 'HASH';
     die "Unsupported KV capability protocol\n"
-        unless ($extension->{'version'} // 0) == PROTOCOL_VERSION;
+        unless (defined($extension_hr->{'version'})
+            &&!ref($extension_hr->{'version'})
+            &&($extension_hr->{'version'} eq PROTOCOL_VERSION()));
     die "Invalid KV capability token\n"
-        unless defined($extension->{'capability'})
-            && !ref($extension->{'capability'})
-            && length($extension->{'capability'});
+        unless (defined($extension_hr->{'capability'})
+            &&!ref($extension_hr->{'capability'})
+            &&length($extension_hr->{'capability'}));
 
-    my $binding = $opt{'binding'} // 'KV';
+    my $binding=(defined($opt{'binding'}) ? $opt{'binding'} : 'KV');
     die "Invalid KV binding name '$binding'\n"
-        unless $binding =~ /\A[A-Z_][A-Z0-9_]*\z/;
-    my %binding = map { $_ => 1 } grep { defined && !ref } @{$extension->{'bindings'} // []};
+        unless (!ref($binding)&&($binding=~/\A[A-Z_][A-Z0-9_]*\z/));
+    my $bindings_ar=$extension_hr->{'bindings'};
+    die "Invalid KV capability binding list\n"
+        unless (ref($bindings_ar) eq 'ARRAY');
+    my %binding=map { $_ => 1 } grep { defined($_)&&!ref($_) } @{$bindings_ar};
     die "KV binding '$binding' is not available to this request\n"
         unless $binding{$binding};
 
-    return bless {
+    my $self=bless({
         binding    => $binding,
-        capability => $extension->{'capability'},
-    }, $class;
+        capability => $extension_hr->{'capability'},
+    }, $class);
+    return $self;
 }
+
 
 sub binding { return shift()->{'binding'}; }
 
+
 sub blob {
-    shift if @_ > 1 && (ref($_[0]) || $_[0] eq __PACKAGE__);
+    #  Accept function, class and object calls without discarding payload bytes.
+    #
+    shift() if ((@_>1)&&(defined($_[0])
+        &&(blessed($_[0])||(!ref($_[0])&&($_[0] eq __PACKAGE__)))));
+    die "KV blob requires exactly one byte string\n" unless (@_==1);
     return WebDyne::Cloudflare::KV::Blob->new($_[0]);
 }
 
-sub _key {
-    my ($key) = @_;
+
+sub key {
+    my ($key)=@_;
     die "KV key must be a non-empty scalar other than . or ..\n"
-        unless defined($key) && !ref($key) && length($key) && $key ne '.' && $key ne '..';
+        unless (defined($key)&&!ref($key)&&length($key)
+            &&($key ne '.')&&($key ne '..'));
     return $key;
 }
 
-sub _known_options {
-    my ($operation, $allowed, %opt) = @_;
-    my %allowed = map { $_ => 1 } @{$allowed};
-    my @unknown = sort grep { !$allowed{$_} } keys %opt;
+
+sub known_options {
+    my ($operation, $allowed_ar, %opt)=@_;
+    my %allowed=map { $_ => 1 } @{$allowed_ar};
+    my @unknown=sort grep { !$allowed{$_} } keys %opt;
     die "Unknown KV $operation option: $unknown[0]\n" if @unknown;
     return %opt;
 }
 
-sub _encode_text {
-    my ($value) = @_;
-    die "KV value must be a scalar or KV blob\n" if !defined($value) || ref($value);
-    return decode('UTF-8', $value, FB_CROAK)
-        if !utf8::is_utf8($value) && $value =~ /[\x80-\xff]/;
-    return $value;
+
+sub encode_text {
+    my ($value_ref)=@_;
+    die "KV value must be a scalar or KV blob\n" if (!defined($value_ref)||ref($value_ref));
+    return decode('UTF-8', $value_ref, FB_CROAK)
+        if (!utf8::is_utf8($value_ref)&&($value_ref=~/[\x80-\xff]/));
+    return $value_ref;
 }
 
-sub _decode_bytes {
-    my ($value) = @_;
-    return undef unless defined $value;
+
+sub decode_bytes {
+    my ($value_ref)=@_;
+    return undef unless defined($value_ref);
     die "KV host returned an invalid byte value\n"
-        unless ref($value) eq 'HASH'
-            && ($value->{'type'} // '') eq 'bytes'
-            && defined($value->{'base64'});
-    return decode_base64($value->{'base64'});
+        unless ((ref($value_ref) eq 'HASH')
+            &&defined($value_ref->{'type'})&&($value_ref->{'type'} eq 'bytes')
+            &&defined($value_ref->{'base64'})&&!ref($value_ref->{'base64'}));
+    return decode_base64($value_ref->{'base64'});
 }
+
 
 async sub get {
-    my ($self, $key, %opt) = @_;
-    %opt = _known_options('get', [qw(type cache_ttl)], %opt);
-    my $type = $opt{'type'} // 'text';
+    my ($self, $key, %opt)=@_;
+    %opt=known_options('get', [qw(type cache_ttl)], %opt);
+    my $type=(defined($opt{'type'}) ? $opt{'type'} : 'text');
     die "KV get type must be text, json, or bytes\n"
-        unless $type eq 'text' || $type eq 'json' || $type eq 'bytes';
-    my $result = await $self->_execute(
+        unless (($type eq 'text')||($type eq 'json')||($type eq 'bytes'));
+    my $result_ref=await $self->execute(
         operation => 'get',
-        key       => _key($key),
+        key       => key($key),
         type      => $type,
         (defined($opt{'cache_ttl'}) ? (cache_ttl => $opt{'cache_ttl'}) : ()),
     );
-    return $type eq 'bytes' ? _decode_bytes($result) : $result;
+    return $type eq 'bytes' ? decode_bytes($result_ref) : $result_ref;
 }
+
 
 async sub get_with_metadata {
-    my ($self, $key, %opt) = @_;
-    %opt = _known_options('get_with_metadata', [qw(type cache_ttl)], %opt);
-    my $type = $opt{'type'} // 'text';
+    my ($self, $key, %opt)=@_;
+    %opt=known_options('get_with_metadata', [qw(type cache_ttl)], %opt);
+    my $type=(defined($opt{'type'}) ? $opt{'type'} : 'text');
     die "KV get type must be text, json, or bytes\n"
-        unless $type eq 'text' || $type eq 'json' || $type eq 'bytes';
-    my $result = await $self->_execute(
+        unless (($type eq 'text')||($type eq 'json')||($type eq 'bytes'));
+    my $result_ref=await $self->execute(
         operation => 'get_with_metadata',
-        key       => _key($key),
+        key       => key($key),
         type      => $type,
         (defined($opt{'cache_ttl'}) ? (cache_ttl => $opt{'cache_ttl'}) : ()),
     );
-    $result->{'value'} = _decode_bytes($result->{'value'})
-        if $type eq 'bytes' && ref($result) eq 'HASH';
-    return $result;
+    $result_ref->{'value'}=decode_bytes($result_ref->{'value'})
+        if (($type eq 'bytes')&&(ref($result_ref) eq 'HASH'));
+    return $result_ref;
 }
 
+
 async sub put {
-    my ($self, $key, $value, %opt) = @_;
-    %opt = _known_options('put', [qw(expiration expiration_ttl metadata)], %opt);
-    my $encoded = blessed($value) && $value->isa('WebDyne::Cloudflare::KV::Blob')
-        ? $value->wire_value()
-        : _encode_text($value);
-    return await $self->_execute(
+    my ($self, $key, $value_ref, %opt)=@_;
+    %opt=known_options('put', [qw(expiration expiration_ttl metadata)], %opt);
+    my $encoded_ref=(blessed($value_ref)&&$value_ref->isa('WebDyne::Cloudflare::KV::Blob'))
+        ? $value_ref->wire_value()
+        : encode_text($value_ref);
+    return await $self->execute(
         operation => 'put',
-        key       => _key($key),
-        value     => $encoded,
+        key       => key($key),
+        value     => $encoded_ref,
         (defined($opt{'expiration'}) ? (expiration => $opt{'expiration'}) : ()),
         (defined($opt{'expiration_ttl'}) ? (expiration_ttl => $opt{'expiration_ttl'}) : ()),
         (exists($opt{'metadata'}) ? (metadata => $opt{'metadata'}) : ()),
     );
 }
 
+
 async sub put_json {
-    my ($self, $key, $value, %opt) = @_;
-    return await $self->put($key, $JSON->encode($value), %opt);
+    my ($self, $key, $value_ref, %opt)=@_;
+    return await $self->put($key, $json_or->encode($value_ref), %opt);
 }
+
 
 async sub delete {
-    my ($self, $key) = @_;
-    return await $self->_execute(operation => 'delete', key => _key($key));
+    my ($self, $key)=@_;
+    return await $self->execute(operation => 'delete', key => key($key));
 }
+
 
 async sub list {
-    my ($self, %opt) = @_;
-    %opt = _known_options('list', [qw(prefix cursor limit)], %opt);
-    return await $self->_execute(operation => 'list', %opt);
+    my ($self, %opt)=@_;
+    %opt=known_options('list', [qw(prefix cursor limit)], %opt);
+    return await $self->execute(operation => 'list', %opt);
 }
 
-sub _call_host {
-    my ($wire) = @_;
+
+sub call_host {
+    my ($wire)=@_;
     return $HOST_CALL->($wire) if $HOST_CALL;
     no strict 'refs';
-    my $host_call = *{'WebDyne::Cloudflare::KV::Host::call'}{'CODE'};
-    die "KV host adapter is not registered in this runtime\n" unless $host_call;
-    return $host_call->($wire);
+    my $host_call_cr=*{'WebDyne::Cloudflare::KV::Host::call'}{'CODE'};
+    die "KV host adapter is not registered in this runtime\n" unless $host_call_cr;
+    return $host_call_cr->($wire);
 }
 
-async sub _execute {
-    my ($self, %request) = @_;
-    my $wire = {
+
+async sub execute {
+    my ($self, %request)=@_;
+    my $wire_hr={
         version    => PROTOCOL_VERSION,
         capability => $self->{'capability'},
         binding    => $self->{'binding'},
         %request,
     };
-    my $response_wire = _call_host($JSON->encode($wire));
-    my $response = eval { $JSON->decode($response_wire) };
-    if (!$response || ref($response) ne 'HASH') {
-        my $detail = $@ || 'host returned an invalid response';
+    my $response_wire=call_host($json_or->encode($wire_hr));
+    my $response_hr=eval { $json_or->decode($response_wire) };
+    if ((ref($response_hr) ne 'HASH')||!exists($response_hr->{'ok'})) {
+        my $detail=$@||'host returned an invalid response';
         die WebDyne::Cloudflare::KV::Error->new(name => 'KV_PROTOCOL_ERROR', message => $detail);
     }
-    unless ($response->{'ok'}) {
-        my $error = ref($response->{'error'}) eq 'HASH' ? $response->{'error'} : {};
-        die WebDyne::Cloudflare::KV::Error->new(%{$error});
+    unless ($response_hr->{'ok'}) {
+        my $error_hr=ref($response_hr->{'error'}) eq 'HASH' ? $response_hr->{'error'} : {};
+        die WebDyne::Cloudflare::KV::Error->new(%{$error_hr});
     }
-    return $response->{'result'};
+    return $response_hr->{'result'};
 }
 
 1;
-
-__END__
-
-=head1 NAME
-
-WebDyne::Cloudflare::KV - Future-returning Cloudflare Workers KV facade
-
-=head1 SYNOPSIS
-
-  use WebDyne::Cloudflare::KV;
-
-  my $kv = WebDyne::Cloudflare::KV->new(
-      scope   => $self->r()->{'scope'},
-      binding => 'CACHE',
-  );
-  await $kv->put('greeting', 'hello', metadata => { source => 'WebDyne' });
-  my $value = await $kv->get('greeting');
-
-=head1 DESCRIPTION
-
-The facade exposes buffered KV get, get-with-metadata, put, delete, and list
-operations through a request-scoped capability. Methods return C<Future>
-objects. Use C<blob($bytes)> and C<type =E<gt> 'bytes'> for binary values.
-
-=cut

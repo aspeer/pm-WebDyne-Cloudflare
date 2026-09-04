@@ -14,3 +14,11 @@ their Cloudflare host adapters, examples, tests, and packaging documentation.
   without explicit approval.
 - Run `perl Makefile.PL`, `make test`, and the relevant Wrangler local/remote
   checks before committing substantive work.
+
+- Use `app` for PSP directories. User-facing examples belong in `examples/app`;
+  smoke tests must use their own `t/fixtures/app` and SQL fixtures.
+- Keep Perl/related tests under `t` and JavaScript tests and smoke tooling under
+  `t.js`. Do not stage or execute user examples as smoke-test fixtures.
+- Follow the Perl house style, with typed reference suffixes, explicit call
+  parentheses and clear grouping of mixed logical/comparison expressions.
+- Maintain module documentation in `.pm.md` sidecars, not independent POD.

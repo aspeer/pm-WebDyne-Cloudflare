@@ -16,4 +16,4 @@ use_ok('WebDyne::Cloudflare::R2::Blob');
 use_ok('WebDyne::Cloudflare::R2::Error');
 use_ok('WebDyne::Cloudflare::R2::Object');
 
-done_testing;
+done_testing();

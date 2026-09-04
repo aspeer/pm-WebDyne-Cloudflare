@@ -172,7 +172,6 @@ export class R2HostBridge {
 
   register(perl) {
     if (this.#registeredPerls.has(perl)) return;
-    this.#registeredPerls.add(perl);
     perl.registerFunction(HOST_FUNCTION_NAME, async (requestValue) => {
       let response;
       try {
@@ -182,6 +181,7 @@ export class R2HostBridge {
       }
       return perl.createString(JSON.stringify(response));
     });
+    this.#registeredPerls.add(perl);
   }
 
   async dispatch(request) {
@@ -201,7 +201,10 @@ export class R2HostBridge {
         return objectMetadata(object);
       }
       const returnedSize = object.range?.length ?? object.size;
-      if (returnedSize > this.#maxObjectBytes) throw new RangeError("R2 object exceeds the configured byte limit");
+      if (returnedSize > this.#maxObjectBytes) {
+        if (typeof object.body?.cancel === "function") await object.body.cancel();
+        throw new RangeError("R2 object exceeds the configured byte limit");
+      }
       const body = await object.arrayBuffer();
       if (body.byteLength > this.#maxObjectBytes) throw new RangeError("R2 object exceeds the configured byte limit");
       return { ...objectMetadata(object), body: encodeBytes(body) };

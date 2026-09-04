@@ -14,7 +14,8 @@ try {
   await retryAction(baseUrl, "/kv.psp", "get_json", key);
   await requestAction(baseUrl, "/kv.psp", "put_bytes", key);
   await retryAction(baseUrl, "/kv.psp", "get_bytes", key);
-  console.log("WebDyne KV smoke OK (text/JSON/bytes, metadata, list, delete)");
 } finally {
-  await retryAction(baseUrl, "/kv.psp", "delete", key, 3).catch(() => {});
+  await retryAction(baseUrl, "/kv.psp", "delete", key, 3);
 }
+
+console.log("WebDyne KV smoke OK (operations and cleanup)");
