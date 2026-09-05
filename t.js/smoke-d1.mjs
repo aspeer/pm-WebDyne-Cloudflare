@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 const root = new URL(process.argv[2] ?? "http://127.0.0.1:8790/");
 
@@ -47,4 +48,16 @@ assert.match(recovered.body, /Milestone 2/);
 const concurrent = await Promise.all(Array.from({ length: 24 }, () => request("/d1.psp")));
 for (const result of concurrent) assert.match(result.body, /Milestone 2/);
 
-console.log(`WebDyne D1 smoke OK (HTML, JSON, insert, recovery, ${concurrent.length} concurrent reads)`);
+const batches = await Promise.all(Array.from({ length: 8 }, () => request(`/d1-batch/check/${randomUUID()}`)));
+for (const result of batches) {
+  assert.deepEqual(JSON.parse(result.body), {
+    rows: [
+      {slot: 1, name: "O'Brien π", note: null, payload_hex: "00ff"},
+      {slot: 2, name: "", note: "0", payload_hex: ""},
+    ],
+    rollback: 1,
+    recovered: 1,
+  });
+}
+
+console.log(`WebDyne D1 smoke OK (HTML, JSON, insert, recovery, ${concurrent.length} concurrent reads, ${batches.length} atomic batch checks)`);

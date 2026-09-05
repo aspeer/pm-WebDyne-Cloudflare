@@ -2,6 +2,8 @@
 
 Create statements through `$db_or->prepare($sql)`. `bind(@params)` returns a
 new statement without modifying the original.
+Pass these statements to `$db_or->batch([$statement_or, ...])` for atomic
+execution. Every statement must originate from that exact database object.
 
 - `run()` and `all()` return a Future containing the D1 result hash
   (results, meta, success).

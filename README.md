@@ -79,6 +79,23 @@ ordered SQLite placeholders such as `?1`; the adapter does not interpolate
 SQL. `undef`, strings, numbers, JSON booleans, and explicit D1 BLOB wrappers
 are supported. Errors fail with `WebDyne::Cloudflare::D1::Error`.
 
+Use `batch()` for an atomic sequence of prepared statements:
+
+```perl
+my $insert_or=$db_or->prepare('INSERT INTO thing(name) VALUES (?1)');
+my $results_ar=$db_or->batch([
+    $insert_or->bind('first'),
+    $insert_or->bind('second'),
+    $db_or->prepare('SELECT name FROM thing ORDER BY name'),
+])->get();
+```
+
+Results preserve statement order, with the usual `results`, `meta` and
+`success` fields. A failed statement rolls back the whole batch and fails the
+Future. Use a non-empty array of statements prepared by that same database
+object. All statements are supplied up front; the batch does not pause for
+Perl code between statements. See [the D1 API](lib/WebDyne/Cloudflare/D1.pm.md).
+
 ### Workers KV
 
 ```perl
@@ -208,5 +225,5 @@ pages exercise the real Perl, WASM, JavaScript, and
 Wrangler storage path. Use `--remote true` with the corresponding namespace ID,
 database ID or bucket name only when deliberately testing a remote resource.
 
-The current surfaces intentionally exclude D1 batch/session APIs, R2 streaming
+The current surfaces intentionally exclude D1 session APIs, R2 streaming
 and multipart uploads, cross-service retries, and active cancellation.

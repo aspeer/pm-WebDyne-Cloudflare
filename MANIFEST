@@ -53,6 +53,7 @@ package.json
 t.js/check-package.mjs
 t.js/cloudflare.test.mjs
 t.js/d1-host.test.mjs
+t.js/d1-batch.test.mjs
 t.js/kv-host.test.mjs
 t.js/prepare-storage-smoke.mjs
 t.js/r2-host.test.mjs
@@ -67,7 +68,9 @@ t/01-d1.t
 t/02-kv.t
 t/03-r2.t
 t/04-regressions.t
+t/05-d1-batch.t
 t/fixtures/app/d1-api.psp
+t/fixtures/app/d1-batch.psp
 t/fixtures/app/d1.psp
 t/fixtures/app/kv.psp
 t/fixtures/app/r2.psp

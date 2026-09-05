@@ -40,6 +40,24 @@ function decodeParameter(value) {
   return value;
 }
 
+function statementRequest(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("D1 statement must be an object");
+  }
+  if (typeof value.sql !== "string" || value.sql.length === 0) {
+    throw new TypeError("D1 statement requires a non-empty SQL string");
+  }
+  if (value.params !== undefined && !Array.isArray(value.params)) {
+    throw new TypeError("D1 statement parameters must be an array");
+  }
+  return { sql: value.sql, params: (value.params ?? []).map(decodeParameter) };
+}
+
+function prepareStatement(database, { sql, params }) {
+  const statement = database.prepare(sql);
+  return params.length > 0 ? statement.bind(...params) : statement;
+}
+
 function encodeBlob(value) {
   if (value instanceof ArrayBuffer) {
     return { type: "blob", base64: bytesToBase64(value) };
@@ -173,12 +191,17 @@ export class D1HostBridge {
     if (!bindings) throw new Error("D1 capability is invalid or has expired");
     const database = bindings.get(assertBindingName(request.binding));
     if (!database) throw new Error(`D1 binding ${request.binding} is not allowed by this capability`);
-    if (typeof request.sql !== "string" || request.sql.length === 0) {
-      throw new TypeError("D1 statement requires a non-empty SQL string");
+    if (request.operation === "batch") {
+      if (!Array.isArray(request.statements) || request.statements.length === 0) {
+        throw new TypeError("D1 batch requires a non-empty array of statements");
+      }
+      // Decode the entire batch before preparing or executing provider statements.
+      const requests = request.statements.map(statementRequest);
+      const statements = requests.map((value) => prepareStatement(database, value));
+      const results = await database.batch(statements);
+      return results.map((result) => encodeResult("run", result));
     }
-    const params = (request.params ?? []).map(decodeParameter);
-    let statement = database.prepare(request.sql);
-    if (params.length > 0) statement = statement.bind(...params);
+    const statement = prepareStatement(database, statementRequest(request));
 
     let result;
     if (request.operation === "run") result = await statement.run();

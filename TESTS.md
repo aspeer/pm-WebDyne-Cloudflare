@@ -29,6 +29,11 @@
 
 ## Integration gates
 
+Batch coverage is in `t/05-d1-batch.t` and `t.js/d1-batch.test.mjs`.
+The D1 smoke also calls `t/fixtures/app/d1-batch.psp`, using a dedicated table
+from `t/fixtures/schema.sql`. Restage and initialize a fresh smoke application
+when updating from an older fixture set.
+
 - `perl Makefile.PL && make test`
 - `wdlint` for the dedicated PSP fixtures under `t/fixtures/app`
 - local Wrangler D1 schema initialization and query
@@ -128,3 +133,16 @@ Example lint/render checks are manual authoring validation, not smoke tests.
 - The existing embedded CGI::Simple::Cookie emits two `lc` ambiguity warnings
   during cold initialization. These are recorded in BACKLOG.md; service and
   example requests still completed successfully.
+
+## 2026-09-05 D1 batch implementation
+
+- Native Perl 5.42.2: 159 assertions across six files; JavaScript: 32 tests.
+- Compile checks and batch PSP lint passed. MakeMaker test/distcheck, npm
+  package allow-list and generated Worker deployment dry-run passed.
+- Local Perl 5.44 Worker passed the original D1 smoke, 24 concurrent reads,
+  and eight concurrent batch sequences with independently keyed rows.
+- Each batch sequence checked two writes plus a read, ordered metadata,
+  Unicode/NULL/empty/BLOB values, rollback after a middle constraint failure,
+  and a subsequent successful batch in the same request.
+- Direct local D1 inspection found zero batch-test rows after cleanup.
+- No remote qualification, release or interpreter rebuild was performed.

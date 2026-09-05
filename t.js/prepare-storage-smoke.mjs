@@ -50,6 +50,7 @@ for (const page of services.map((service) => `${service}.psp`)) {
 }
 if (services.includes("d1")) {
   await cp(resolve(root, "t/fixtures/app/d1-api.psp"), resolve(destination, "app/d1-api.psp"));
+  await cp(resolve(root, "t/fixtures/app/d1-batch.psp"), resolve(destination, "app/d1-batch.psp"));
   await cp(resolve(root, "t/fixtures/schema.sql"), resolve(destination, "schema.sql"));
 }
 const packageJson = {

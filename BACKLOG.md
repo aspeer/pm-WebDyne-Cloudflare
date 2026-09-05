@@ -6,8 +6,8 @@
   cancellation when the host protocol can model backpressure and cleanup.
 - Qualify the R2 facade against a remote bucket after R2 is enabled for the
   attached Cloudflare account.
-- Add batch and D1 read-replication/session support after the basic prepared
-  statement API has production experience.
+- Add D1 read-replication/session support when requested; atomic batches are
+  implemented and independently usable.
 
 - Run the native contract suite on the declared Perl 5.20 minimum in CI; this
   refactor was checked on native Perl 5.42.2 and WASM Perl 5.44 only.

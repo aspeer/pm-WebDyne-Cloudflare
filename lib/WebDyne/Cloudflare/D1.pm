@@ -102,6 +102,24 @@ async sub first {
 }
 
 
+async sub batch {
+    my ($self, $statements_ar)=@_;
+    die "D1 batch requires one non-empty array of prepared statements\n"
+        unless ((@_==2)&&(ref($statements_ar) eq 'ARRAY')&&@{$statements_ar});
+
+    #  Validate every statement before crossing the host boundary.
+    #
+    my @request;
+    foreach my $statement_or (@{$statements_ar}) {
+        die "D1 batch entries must be D1 prepared statements\n"
+            unless (blessed($statement_or)
+                &&$statement_or->isa('WebDyne::Cloudflare::D1::Statement'));
+        push(@request, $statement_or->batch_request($self));
+    }
+    return await $self->execute(operation => 'batch', statements => \@request);
+}
+
+
 sub encode_parameter {
     my ($value_ref)=@_;
     return undef unless defined($value_ref);
@@ -141,6 +159,22 @@ sub decode_row {
 sub decode_result {
     my ($request_hr, $result_ref)=@_;
 
+    if ($request_hr->{'operation'} eq 'batch') {
+        die WebDyne::Cloudflare::D1::Error->new(
+            name    => 'D1_PROTOCOL_ERROR',
+            message => 'host returned an invalid batch result count',
+        ) unless ((ref($result_ref) eq 'ARRAY')
+            &&(@{$result_ref}==@{$request_hr->{'statements'}}));
+        foreach my $result_hr (@{$result_ref}) {
+            die WebDyne::Cloudflare::D1::Error->new(
+                name    => 'D1_PROTOCOL_ERROR',
+                message => 'host returned an invalid batch result',
+            ) unless ((ref($result_hr) eq 'HASH')
+                &&(ref($result_hr->{'results'}) eq 'ARRAY')&&$result_hr->{'success'});
+        }
+        return [map { decode_result({operation => 'run'}, $_) } @{$result_ref}];
+    }
+
     #  Decode only column values; rows can legitimately have type/base64 columns.
     #
     if ($request_hr->{'operation'} eq 'first') {
@@ -174,7 +208,14 @@ async sub execute {
         binding    => $self->{'binding'},
         %request,
     };
-    $wire_hr->{'params'}=[map { encode_parameter($_) } @{(defined($wire_hr->{'params'}) ? $wire_hr->{'params'} : [])}];
+    if ($request{'operation'} eq 'batch') {
+        $wire_hr->{'statements'}=[map {
+            {sql => $_->{'sql'}, params => [map { encode_parameter($_) } @{$_->{'params'}}]}
+        } @{$request{'statements'}}];
+    }
+    else {
+        $wire_hr->{'params'}=[map { encode_parameter($_) } @{(defined($wire_hr->{'params'}) ? $wire_hr->{'params'} : [])}];
+    }
 
     my $response_wire=call_host($json_or->encode($wire_hr));
     my $response_hr=eval { $json_or->decode($response_wire) };

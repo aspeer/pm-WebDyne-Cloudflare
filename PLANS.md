@@ -63,3 +63,15 @@ Branch: `codex/cloudflare-style-test-layout`
   KV read limits and unread R2 body cleanup.
 - [x] Add focused regression tests and Markdown API sidecars.
 - [x] Complete local Perl 5.44 Worker verification and final packaging review.
+
+## D1 atomic batch implementation
+
+Branch: `codex/d1-batch`
+
+- [x] Add Future-returning `batch()` for an array of same-owner statements.
+- [x] Reuse parameter/BLOB encoding and preserve ordered result hashes.
+- [x] Validate the entire batch before one provider batch execution.
+- [x] Cover input validation, binding/request isolation and structured failures.
+- [x] Prove rollback and recovery through dedicated local Perl 5.44 fixtures.
+- [x] Verify concurrent requests, fixture cleanup and package manifests.
+- [x] Update API sidecars, README and decisions; leave sessions deferred.

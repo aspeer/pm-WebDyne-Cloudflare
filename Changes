@@ -1,4 +1,7 @@
 Unreleased
+    Add Future-returning D1 batch() with ordered results and atomic provider execution.
+    Validate all statements/parameters before dispatch; require the same database owner.
+    Cover rollback, binary/Unicode values and warm recovery with dedicated WASM fixtures.
     Clarify Perl precedence and adopt the WebDyne house style and API sidecars.
     Separate examples/app, t fixtures and t.js tests/staging tools.
     Fix D1 BLOB decoding collisions with real type/base64 columns.

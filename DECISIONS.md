@@ -36,6 +36,9 @@ Batch, `exec`, read-replication sessions/bookmarks, retry policy, and active
 cancellation wait until the basic request capability and warm-runtime behavior
 are proven end to end.
 
+Batch was approved separately on 2026-09-05 and is covered by D008 below.
+The other features remain deferred.
+
 ## D005: Publish one npm-first dual-surface extension
 
 - Status: accepted
@@ -83,3 +86,25 @@ sibling runtime checkout. Existing destinations are refused.
 Perl API documentation is maintained in `.pm.md` sidecars, with no independent
 hand-maintained POD copy. MakeMaker uses an explicit abstract. Sidecars ship
 in the npm/source distributions; no documentation converter is introduced.
+
+## D008: Atomic D1 batches use existing prepared statements
+
+- Status: accepted
+- Date: 2026-09-05
+
+`$db_or->batch($statements_ar)` accepts one non-empty array of statements
+created by the exact same database facade. Matching object identity prevents
+accidentally moving statements between bindings, requests or future sessions.
+Each statement is validated and its parameters encoded before any host call.
+
+The additive `batch` operation uses the existing version-1 capability envelope
+and calls the provider's `database.batch()` exactly once. No per-statement
+fallback, automatic splitting or retry is used. Ordered result hashes use the
+existing BLOB encoding and decoding. Provider failures fail the whole Future;
+Cloudflare supplies transaction rollback. Supply all SQL and parameters up
+front; this does not introduce interactive transactions or sessions/bookmarks.
+
+The Perl facade and JavaScript adapter are distributed together and must both
+include batch support. An older adapter rejects the new operation explicitly.
+Local verification uses the existing Perl 5.44 runtime with the new extension
+mounted through VFS, without rebuilding the interpreter.
