@@ -198,12 +198,26 @@ paths for custom Workers.
 ## Release packaging
 
 `npm run pack:check` verifies the exact public package allow-list. The
-`WebDyne Cloudflare release` GitHub workflow runs Perl and JavaScript tests,
-audits dependencies, dry-runs npm publication, creates the npm `.tgz` and its
-SHA-256/source manifest, attests the result, and can create an immutable GitHub
-Release when its guarded input is enabled. The separate npm workflow consumes
-only a qualified workflow artifact or immutable GitHub Release; final npm
-publication remains deliberately disabled.
+`WebDyne Cloudflare release` GitHub workflow runs the Perl and JavaScript
+suites through MakeMaker, checks the source manifest, audits dependencies,
+dry-runs npm publication, and creates an attested `.tgz` with a SHA-256/source
+manifest. Run it on `main` with `publish_release=true` to create the matching
+GitHub tag and Release.
+
+Then run `WebDyne Cloudflare npm package` on the same `main` commit with either
+the successful `source_run_id` or its `release_tag`. It verifies the package's
+signed build provenance and source commit before publishing the exact archive
+to npm with provenance. It does not rebuild or replace an existing npm version.
+
+Publication uses npm Trusted Publishing when configured for
+`aspeer/pm-WebDyne-Cloudflare`, workflow `webdyne-cloudflare-npm.yml`, with direct
+publishing allowed and no environment restriction. A repository `NPM_TOKEN`
+secret provides a fallback for the initial publication. Configure any token
+with permission to publish this package in the `@webdyne` scope.
+
+Only `README.md` and [TEST.md](TEST.md) are retained as root Markdown in the
+release branch. Module API sidecars remain beside the Perl source files;
+development planning notes remain on the development branches.
 
 ## Development
 

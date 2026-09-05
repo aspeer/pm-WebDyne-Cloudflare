@@ -16,6 +16,7 @@ const cache = await mkdtemp(join(tmpdir(), "webdyne-cloudflare-npm-cache-"));
 const expected = [
   "LICENSE",
   "README.md",
+  "TEST.md",
   "js/cloudflare.js",
   "js/d1-host.js",
   "js/kv-host.js",

@@ -19,6 +19,7 @@ concurrency:
 jobs:
   build:
     name: Qualify npm release
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,10 +86,12 @@ jobs:
 
       - name: Test Perl and JavaScript contracts
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes cpanminus
-          cpanm --notest --installdeps .
-          npm test
+          sudo apt-get install --yes libfuture-perl libfuture-asyncawait-perl
+          perl Makefile.PL
+          make test
+          make distcheck
 
       - name: Audit and inspect the production package
         run: |

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_run_id:
-        description: Dry-run release workflow run ID; leave empty when consuming a GitHub Release
+        description: Successful release workflow run ID; leave empty when consuming a GitHub Release
         required: false
         type: string
         default: ""
@@ -17,9 +17,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: webdyne-cloudflare-npm
+  cancel-in-progress: false
+
 jobs:
   package:
-    name: Validate npm publication
+    name: Publish qualified npm package
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -39,6 +44,17 @@ jobs:
           node-version: "24"
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
+
+      - name: Check npm trusted-publishing support
+        run: |
+          npm_version="$(npm --version)"
+          node - "$npm_version" <<'NODE'
+          const [major, minor, patch] = process.argv[2].split('.').map(Number);
+          if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) {
+            throw new Error('npm 11.5.1 or newer is required for trusted publishing');
+          }
+          console.log(`Publishing with npm ${process.argv[2]}`);
+          NODE
 
       - name: Resolve and validate package metadata
         env:
@@ -80,12 +96,13 @@ jobs:
             readarray -t run_fields < <(
               gh run view "$SOURCE_RUN_ID" \
                 --repo "$GITHUB_REPOSITORY" \
-                --json conclusion,event,headSha,workflowName \
-                --jq '[.conclusion, .event, .headSha, .workflowName][]'
+                --json conclusion,event,headSha,workflowName,headBranch \
+                --jq '[.conclusion, .event, .headSha, .workflowName, .headBranch][]'
             )
             if [ "${run_fields[0]}" != "success" ] || \
                [ "${run_fields[1]}" != "workflow_dispatch" ] || \
-               [ "${run_fields[3]}" != "WebDyne Cloudflare release" ]; then
+               [ "${run_fields[3]}" != "WebDyne Cloudflare release" ] || \
+               [ "${run_fields[4]}" != "main" ]; then
               echo "Source run is not a successful WebDyne Cloudflare release dispatch" >&2
               exit 1
             fi
@@ -104,11 +121,18 @@ jobs:
           fi
 
       - name: Verify immutable npm input
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test -f "incoming/$TARBALL_NAME"
           test -f "incoming/${TARBALL_NAME}.sha256"
           test -f "incoming/$MANIFEST_NAME"
+          gh attestation verify "incoming/$TARBALL_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/webdyne-cloudflare-release.yml" \
+            --source-ref refs/heads/main --source-digest "$GITHUB_SHA" \
+            --deny-self-hosted-runners
           (cd incoming && shasum -a 256 -c "${TARBALL_NAME}.sha256")
           node --input-type=module - "$MANIFEST_NAME" "$TARBALL_NAME" <<'NODE'
           import { createHash } from "node:crypto";
@@ -119,6 +143,8 @@ jobs:
           if (manifest.schemaVersion !== 1
             || manifest.package.name !== "@webdyne/webdyne-cloudflare"
             || manifest.package.version !== process.env.PACKAGE_VERSION
+            || manifest.source.repository !== `https://github.com/${process.env.GITHUB_REPOSITORY}`
+            || manifest.source.revision !== process.env.GITHUB_SHA
             || manifest.source.dirty !== false
             || manifest.artifact.filename !== tarballName
             || manifest.artifact.sha256 !== createHash("sha256").update(tarball).digest("hex")) {
@@ -163,8 +189,10 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: npm publication is deliberately disabled
-        run: |
-          echo "Validated npm candidate: @webdyne/webdyne-cloudflare@${PACKAGE_VERSION}"
-          echo "Future command: npm publish incoming/$TARBALL_NAME --access public"
-          echo "No package was published."
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "incoming/$TARBALL_NAME" --access public --provenance --ignore-scripts
+
+      - name: Verify published version
+        run: npm view "@webdyne/webdyne-cloudflare@$PACKAGE_VERSION" version dist.integrity --json

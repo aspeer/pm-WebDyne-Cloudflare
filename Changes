@@ -1,4 +1,4 @@
-Unreleased
+1.2.0  2026-09-05
     Add Future-returning D1 batch() with ordered results and atomic provider execution.
     Validate all statements/parameters before dispatch; require the same database owner.
     Cover rollback, binary/Unicode values and warm recovery with dedicated WASM fixtures.
