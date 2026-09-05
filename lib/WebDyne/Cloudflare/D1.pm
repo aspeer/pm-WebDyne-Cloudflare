@@ -13,179 +13,224 @@ use WebDyne::Cloudflare::D1::Blob;
 use WebDyne::Cloudflare::D1::Error;
 use WebDyne::Cloudflare::D1::Statement;
 
-our $VERSION = '0.001';
+our $VERSION='0.001';
 our $HOST_CALL;
 
 use constant EXTENSION_NAME => 'webdyne.cloudflare.d1';
 use constant PROTOCOL_VERSION => 1;
 
-my $JSON = JSON::PP->new->canonical->allow_nonref;
+my $json_or=JSON::PP->new()->canonical()->allow_nonref();
 
 sub new {
-    my ($class, %opt) = @_;
-    my $scope = $opt{'scope'};
+    my ($class, %opt)=@_;
+    my $scope_hr=$opt{'scope'};
     die "WebDyne::Cloudflare::D1 requires a PAGI scope hash\n"
-        unless ref($scope) eq 'HASH';
-    my $extension = $scope->{'extensions'}{EXTENSION_NAME()};
+        unless ref($scope_hr) eq 'HASH';
+    my $extension_hr=(ref($scope_hr->{'extensions'}) eq 'HASH')
+        ? $scope_hr->{'extensions'}{EXTENSION_NAME()}
+        : undef;
     die "PAGI scope has no " . EXTENSION_NAME() . " capability\n"
-        unless ref($extension) eq 'HASH';
+        unless ref($extension_hr) eq 'HASH';
     die "Unsupported D1 capability protocol\n"
-        unless ($extension->{'version'} // 0) == PROTOCOL_VERSION;
+        unless (defined($extension_hr->{'version'})
+            &&!ref($extension_hr->{'version'})
+            &&($extension_hr->{'version'} eq PROTOCOL_VERSION()));
     die "Invalid D1 capability token\n"
-        unless defined($extension->{'capability'})
-            && !ref($extension->{'capability'})
-            && length($extension->{'capability'});
+        unless (defined($extension_hr->{'capability'})
+            &&!ref($extension_hr->{'capability'})
+            &&length($extension_hr->{'capability'}));
 
-    my $binding = $opt{'binding'} // 'DB';
+    my $binding=(defined($opt{'binding'}) ? $opt{'binding'} : 'DB');
     die "Invalid D1 binding name '$binding'\n"
-        unless $binding =~ /\A[A-Z_][A-Z0-9_]*\z/;
-    my %binding = map { $_ => 1 } grep { defined && !ref } @{$extension->{'bindings'} // []};
+        unless (!ref($binding)&&($binding=~/\A[A-Z_][A-Z0-9_]*\z/));
+    my $bindings_ar=$extension_hr->{'bindings'};
+    die "Invalid D1 capability binding list\n"
+        unless (ref($bindings_ar) eq 'ARRAY');
+    my %binding=map { $_ => 1 } grep { defined($_)&&!ref($_) } @{$bindings_ar};
     die "D1 binding '$binding' is not available to this request\n"
         unless $binding{$binding};
 
-    return bless {
+    my $self=bless({
         binding    => $binding,
-        capability => $extension->{'capability'},
-    }, $class;
+        capability => $extension_hr->{'capability'},
+    }, $class);
+    return $self;
 }
+
 
 sub binding {
     return shift()->{'binding'};
 }
 
+
 sub blob {
-    shift if @_ > 1 && (ref($_[0]) || $_[0] eq __PACKAGE__);
+    #  Accept function, class and object calls without discarding payload bytes.
+    #
+    shift() if ((@_>1)&&(defined($_[0])
+        &&(blessed($_[0])||(!ref($_[0])&&($_[0] eq __PACKAGE__)))));
+    die "D1 blob requires exactly one byte string\n" unless (@_==1);
     return WebDyne::Cloudflare::D1::Blob->new($_[0]);
 }
 
+
 sub prepare {
-    my ($self, $sql) = @_;
+    my ($self, $sql)=@_;
     die "D1 prepare requires a non-empty SQL string\n"
-        unless defined($sql) && !ref($sql) && length($sql);
+        unless (defined($sql)&&!ref($sql)&&length($sql));
     return WebDyne::Cloudflare::D1::Statement->new(
         database => $self,
         sql      => $sql,
     );
 }
 
+
 async sub run {
-    my ($self, $sql, @param) = @_;
+    my ($self, $sql, @param)=@_;
     return await $self->prepare($sql)->bind(@param)->run();
 }
 
+
 async sub all {
-    my ($self, $sql, @param) = @_;
+    my ($self, $sql, @param)=@_;
     return await $self->prepare($sql)->bind(@param)->all();
 }
 
+
 async sub first {
-    my ($self, $sql, @param) = @_;
+    my ($self, $sql, @param)=@_;
     return await $self->prepare($sql)->bind(@param)->first();
 }
 
-sub _encode_parameter {
-    my ($value) = @_;
-    return undef unless defined $value;
-    if (blessed($value) && $value->isa('WebDyne::Cloudflare::D1::Blob')) {
-        return $value->wire_value();
+
+async sub batch {
+    my ($self, $statements_ar)=@_;
+    die "D1 batch requires one non-empty array of prepared statements\n"
+        unless ((@_==2)&&(ref($statements_ar) eq 'ARRAY')&&@{$statements_ar});
+
+    #  Validate every statement before crossing the host boundary.
+    #
+    my @request;
+    foreach my $statement_or (@{$statements_ar}) {
+        die "D1 batch entries must be D1 prepared statements\n"
+            unless (blessed($statement_or)
+                &&$statement_or->isa('WebDyne::Cloudflare::D1::Statement'));
+        push(@request, $statement_or->batch_request($self));
     }
-    if (!ref($value)) {
-        # D1 strings are JavaScript Unicode strings. Web/CGI values commonly
-        # arrive as unflagged UTF-8 bytes, while ASCII numeric/string flags are
-        # already preserved correctly by JSON::PP. Binary input must use blob().
-        return decode('UTF-8', $value, FB_CROAK)
-            if !utf8::is_utf8($value) && $value =~ /[\x80-\xff]/;
-        return $value;
+    return await $self->execute(operation => 'batch', statements => \@request);
+}
+
+
+sub encode_parameter {
+    my ($value_ref)=@_;
+    return undef unless defined($value_ref);
+    if (blessed($value_ref)&&$value_ref->isa('WebDyne::Cloudflare::D1::Blob')) {
+        return $value_ref->wire_value();
     }
-    return $value if blessed($value) && $value->isa('JSON::PP::Boolean');
+    if (!ref($value_ref)) {
+        #  Decode web text strictly, preserving ASCII numeric/string flags.
+        #  Binary input must use blob().
+        #
+        return decode('UTF-8', $value_ref, FB_CROAK)
+            if (!utf8::is_utf8($value_ref)&&($value_ref=~/[\x80-\xff]/));
+        return $value_ref;
+    }
+    return $value_ref if (blessed($value_ref)&&$value_ref->isa('JSON::PP::Boolean'));
     die "D1 bind values must be scalars, undef, JSON booleans, or D1 blobs\n";
 }
 
-sub _decode_value {
-    my ($value) = @_;
-    if (ref($value) eq 'HASH'
-        && ($value->{'type'} // '') eq 'blob'
-        && defined($value->{'base64'})) {
-        return decode_base64($value->{'base64'});
-    }
-    if (ref($value) eq 'ARRAY') {
-        return [map { _decode_value($_) } @{$value}];
-    }
-    if (ref($value) eq 'HASH') {
-        return {map { $_ => _decode_value($value->{$_}) } keys %{$value}};
-    }
-    return $value;
+
+sub decode_value {
+    my ($value_ref)=@_;
+    return $value_ref unless (ref($value_ref) eq 'HASH');
+    die "D1 host returned an invalid blob value\n"
+        unless (defined($value_ref->{'type'})&&($value_ref->{'type'} eq 'blob')
+            &&defined($value_ref->{'base64'})&&!ref($value_ref->{'base64'}));
+    return decode_base64($value_ref->{'base64'});
 }
 
-sub _call_host {
-    my ($wire) = @_;
+
+sub decode_row {
+    my ($row_hr)=@_;
+    die "D1 host returned an invalid row\n" unless (ref($row_hr) eq 'HASH');
+    return {map { $_ => decode_value($row_hr->{$_}) } keys(%{$row_hr})};
+}
+
+
+sub decode_result {
+    my ($request_hr, $result_ref)=@_;
+
+    if ($request_hr->{'operation'} eq 'batch') {
+        die WebDyne::Cloudflare::D1::Error->new(
+            name    => 'D1_PROTOCOL_ERROR',
+            message => 'host returned an invalid batch result count',
+        ) unless ((ref($result_ref) eq 'ARRAY')
+            &&(@{$result_ref}==@{$request_hr->{'statements'}}));
+        foreach my $result_hr (@{$result_ref}) {
+            die WebDyne::Cloudflare::D1::Error->new(
+                name    => 'D1_PROTOCOL_ERROR',
+                message => 'host returned an invalid batch result',
+            ) unless ((ref($result_hr) eq 'HASH')
+                &&(ref($result_hr->{'results'}) eq 'ARRAY')&&$result_hr->{'success'});
+        }
+        return [map { decode_result({operation => 'run'}, $_) } @{$result_ref}];
+    }
+
+    #  Decode only column values; rows can legitimately have type/base64 columns.
+    #
+    if ($request_hr->{'operation'} eq 'first') {
+        return undef unless defined($result_ref);
+        return exists($request_hr->{'column'})
+            ? decode_value($result_ref) : decode_row($result_ref);
+    }
+    if ($request_hr->{'operation'} eq 'raw') {
+        return [map { [map { decode_value($_) } @{$_}] } @{$result_ref}];
+    }
+    $result_ref->{'results'}=[map { decode_row($_) } @{$result_ref->{'results'}}];
+    return $result_ref;
+}
+
+
+sub call_host {
+    my ($wire)=@_;
     return $HOST_CALL->($wire) if $HOST_CALL;
     no strict 'refs';
-    my $host_call = *{'WebDyne::Cloudflare::D1::Host::call'}{'CODE'};
-    die "D1 host adapter is not registered in this runtime\n" unless $host_call;
-    return $host_call->($wire);
+    my $host_call_cr=*{'WebDyne::Cloudflare::D1::Host::call'}{'CODE'};
+    die "D1 host adapter is not registered in this runtime\n" unless $host_call_cr;
+    return $host_call_cr->($wire);
 }
 
-async sub _execute {
-    my ($self, %request) = @_;
-    my $wire = {
+
+async sub execute {
+    my ($self, %request)=@_;
+    my $wire_hr={
         version    => PROTOCOL_VERSION,
         capability => $self->{'capability'},
         binding    => $self->{'binding'},
         %request,
     };
-    $wire->{'params'} = [map { _encode_parameter($_) } @{$wire->{'params'} // []}];
+    if ($request{'operation'} eq 'batch') {
+        $wire_hr->{'statements'}=[map {
+            {sql => $_->{'sql'}, params => [map { encode_parameter($_) } @{$_->{'params'}}]}
+        } @{$request{'statements'}}];
+    }
+    else {
+        $wire_hr->{'params'}=[map { encode_parameter($_) } @{(defined($wire_hr->{'params'}) ? $wire_hr->{'params'} : [])}];
+    }
 
-    my $response_wire = _call_host($JSON->encode($wire));
-    my $response = eval { $JSON->decode($response_wire) };
-    if (!$response || ref($response) ne 'HASH') {
-        my $detail = $@ || 'host returned an invalid response';
+    my $response_wire=call_host($json_or->encode($wire_hr));
+    my $response_hr=eval { $json_or->decode($response_wire) };
+    if ((ref($response_hr) ne 'HASH')||!exists($response_hr->{'ok'})) {
+        my $detail=$@||'host returned an invalid response';
         die WebDyne::Cloudflare::D1::Error->new(
             name    => 'D1_PROTOCOL_ERROR',
             message => $detail,
         );
     }
-    unless ($response->{'ok'}) {
-        my $error = ref($response->{'error'}) eq 'HASH' ? $response->{'error'} : {};
-        die WebDyne::Cloudflare::D1::Error->new(%{$error});
+    unless ($response_hr->{'ok'}) {
+        my $error_hr=ref($response_hr->{'error'}) eq 'HASH' ? $response_hr->{'error'} : {};
+        die WebDyne::Cloudflare::D1::Error->new(%{$error_hr});
     }
-    return _decode_value($response->{'result'});
+    return decode_result(\%request, $response_hr->{'result'});
 }
 
 1;
-
-__END__
-
-=head1 NAME
-
-WebDyne::Cloudflare::D1 - Future-returning Cloudflare D1 facade
-
-=head1 SYNOPSIS
-
-  use Future::AsyncAwait;
-  use WebDyne::Cloudflare::D1;
-
-  my $db = WebDyne::Cloudflare::D1->new(
-      scope   => $self->r()->{'scope'},
-      binding => 'DB',
-  );
-
-  my $result = await $db->prepare(
-      'INSERT INTO things(name) VALUES (?1)'
-  )->bind($name)->run();
-
-  my $row = await $db->prepare(
-      'SELECT id, name FROM things WHERE name = ?1 LIMIT 1'
-  )->bind($name)->first();
-
-=head1 DESCRIPTION
-
-The facade consumes an opaque D1 capability from the PAGI scope. It never
-contains or serializes a Cloudflare binding object. Statement execution returns
-a C<Future>; host errors fail that Future with a
-C<WebDyne::Cloudflare::D1::Error>.
-
-Use C<?1>, C<?2>, and other ordered placeholders for dynamic values. Wrap byte
-strings with C<WebDyne::Cloudflare::D1-E<gt>blob($bytes)> to bind a D1 BLOB.
-
-=cut

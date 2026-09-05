@@ -14,36 +14,36 @@ __PERL__
 use WebDyne::Cloudflare::D1;
 
 sub d1_result {
-    my ($self) = @_;
-    my $db = WebDyne::Cloudflare::D1->new(
+    my ($self)=@_;
+    my $db_or=WebDyne::Cloudflare::D1->new(
         scope   => $self->r()->{'scope'},
         binding => 'DB',
     );
-    my $cgi = $self->CGI();
-    my $action = $cgi->param('action') // '';
-    my $id = 1;
+    my $cgi_or=$self->CGI();
+    my $action=$cgi_or->param('action') // '';
+    my $id=1;
     if ($action eq 'insert') {
-        my $name = $cgi->param('name') // 'Inserted from WebDyne';
-        my $write = $db->prepare(
+        my $name=$cgi_or->param('name') // 'Inserted from WebDyne';
+        my $write_hr=$db_or->prepare(
             'INSERT INTO webdyne_d1_example (name, note, payload) VALUES (?1, ?2, ?3)'
         )->bind(
             $name,
             undef,
             WebDyne::Cloudflare::D1->blob("\0WebDyne\xff"),
         )->run()->get();
-        $id = $write->{'meta'}{'last_row_id'};
+        $id=$write_hr->{'meta'}{'last_row_id'};
     }
     elsif ($action eq 'fail') {
-        $db->prepare('SELECT * FROM deliberately_missing_table')->run()->get();
+        $db_or->prepare('SELECT * FROM deliberately_missing_table')->run()->get();
     }
 
-    my $row = $db->prepare(
+    my $row_hr=$db_or->prepare(
         'SELECT id, name, note, payload FROM webdyne_d1_example WHERE id = ?1 LIMIT 1'
     )->bind($id)->first()->get();
-    die "D1 example row $id was not found\n" unless $row;
+    die "D1 example row $id was not found\n" unless $row_hr;
     return $self->render(
-        %{$row},
-        note           => defined($row->{'note'}) ? $row->{'note'} : '(NULL)',
-        payload_length => length($row->{'payload'} // ''),
+        %{$row_hr},
+        note           => defined($row_hr->{'note'}) ? $row_hr->{'note'} : '(NULL)',
+        payload_length => length($row_hr->{'payload'} // ''),
     );
 }

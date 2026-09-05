@@ -6,33 +6,29 @@ use warnings;
 use File::Copy qw(copy);
 use File::Path qw(make_path);
 use File::Spec;
+use FindBin ();
 
-my $worker = shift @ARGV or die "Usage: $0 WORKER_DIRECTORY\n";
-die "Unexpected arguments\n" if @ARGV;
-$worker = File::Spec->rel2abs($worker);
-die "Worker directory does not contain package.json: $worker\n"
-    unless -f File::Spec->catfile($worker, 'package.json');
+exit(main());
 
-my @module = qw(
-    WebDyne/Cloudflare.pm
-    WebDyne/Cloudflare/D1.pm
-    WebDyne/Cloudflare/D1/Blob.pm
-    WebDyne/Cloudflare/D1/Error.pm
-    WebDyne/Cloudflare/D1/Statement.pm
-);
-for my $relative (@module) {
-    my $source = File::Spec->catfile('lib', split m{/}, $relative);
-    my $target = File::Spec->catfile($worker, 'local', 'lib', 'perl5', split m{/}, $relative);
-    my (undef, $directory) = File::Spec->splitpath($target);
-    make_path($directory);
-    copy($source, $target) or die "Unable to copy $source to $target: $!\n";
-    print "Staged $relative\n";
-}
 
-for my $page (qw(d1.psp d1-api.psp)) {
-    my $page_source = File::Spec->catfile('examples', 'htdocs', $page);
-    my $page_target = File::Spec->catfile($worker, 'htdocs', $page);
-    copy($page_source, $page_target)
-        or die "Unable to copy $page_source to $page_target: $!\n";
-    print "Staged $page\n";
+sub main {
+    my $destination_dn=shift(@ARGV) ||
+        die "Usage: $0 NEW_APPLICATION_DIRECTORY\n";
+    die "Unexpected arguments\n" if @ARGV;
+    $destination_dn=File::Spec->rel2abs($destination_dn);
+    die "Destination already exists: $destination_dn\n" if -e $destination_dn;
+
+    #  Stage user examples only; smoke fixtures have an independent harness.
+    #
+    my $source_dn=File::Spec->catdir($FindBin::Bin, '..', 'examples');
+    make_path(File::Spec->catdir($destination_dn, 'app'));
+    foreach my $relative_fn (qw(package.json schema.sql app/d1.psp app/d1-api.psp app/kv.psp app/r2.psp)) {
+        my $source_fn=File::Spec->catfile($source_dn, split(m{/}, $relative_fn));
+        my $target_fn=File::Spec->catfile($destination_dn, split(m{/}, $relative_fn));
+        copy($source_fn, $target_fn) ||
+            die "Unable to copy $source_fn to $target_fn: $!\n";
+    }
+    print("Staged examples in $destination_dn\n");
+    print("Install local runtime and extension tarballs there, then run npm run build.\n");
+    return 0;
 }

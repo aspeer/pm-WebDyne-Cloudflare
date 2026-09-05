@@ -18,3 +18,60 @@ Branch: `webdyne-cloudflare/m2-d1-bridge`
 - [x] Create and validate the approved non-production remote D1 fixture.
 - [x] Run the WebDyne Worker against the remote binding using an approved
   ephemeral Wrangler preview.
+
+## Milestone 3: npm extension distribution
+
+Status: complete
+
+Branch: `codex/npm-extension-packaging`
+
+- [x] Package the Perl facades and JavaScript bridge together as
+  `@webdyne/webdyne-cloudflare`.
+- [x] Export declarative WebDyne extension metadata and a Cloudflare lifecycle
+  factory.
+- [x] Validate an exact npm package allow-list.
+- [x] Add guarded GitHub Release and npm-candidate workflows with SHA-256
+  manifests and build-provenance attestations.
+- [x] Integrate through the ZeroPerl extension lifecycle and an independent
+  application consumer.
+
+## Milestone 4: KV and R2 storage facades
+
+Status: complete (remote R2 qualification pending account enablement)
+
+Branch: `codex/kv-r2-storage`
+
+- [x] Add independent Future-returning KV and buffered R2 Perl modules.
+- [x] Add modular JavaScript KV and R2 bridges with request-scoped
+  capabilities, explicit allow-lists, and byte limits.
+- [x] Generate Wrangler KV namespace and R2 bucket bindings from package.json.
+- [x] Add isolated Perl, JavaScript, and PSP smoke tests.
+- [x] Pass the full KV and R2 flow against local Wrangler storage.
+- [x] Pass text, metadata, list, binary, delete, and cleanup checks against an
+  isolated remote KV namespace.
+- [ ] Repeat the R2 smoke against a remote bucket after R2 is enabled for the
+  attached Cloudflare account.
+
+## Cloudflare review and layout refactor
+
+Branch: `codex/cloudflare-style-test-layout`
+
+- [x] Clarify mixed precedence and apply the Perl house style.
+- [x] Separate user examples from test-owned PSP/SQL fixtures.
+- [x] Move JavaScript tests and smoke helpers into `t.js`.
+- [x] Fix D1 column/envelope collisions, binary validation, registration retry,
+  KV read limits and unread R2 body cleanup.
+- [x] Add focused regression tests and Markdown API sidecars.
+- [x] Complete local Perl 5.44 Worker verification and final packaging review.
+
+## D1 atomic batch implementation
+
+Branch: `codex/d1-batch`
+
+- [x] Add Future-returning `batch()` for an array of same-owner statements.
+- [x] Reuse parameter/BLOB encoding and preserve ordered result hashes.
+- [x] Validate the entire batch before one provider batch execution.
+- [x] Cover input validation, binding/request isolation and structured failures.
+- [x] Prove rollback and recovery through dedicated local Perl 5.44 fixtures.
+- [x] Verify concurrent requests, fixture cleanup and package manifests.
+- [x] Update API sidecars, README and decisions; leave sessions deferred.
