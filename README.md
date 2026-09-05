@@ -206,14 +206,38 @@ GitHub tag and Release.
 
 Then run `WebDyne Cloudflare npm package` on the same `main` commit with either
 the successful `source_run_id` or its `release_tag`. It verifies the package's
-signed build provenance and source commit before publishing the exact archive
-to npm with provenance. It does not rebuild or replace an existing npm version.
+signed build provenance and source commit before staging the exact archive
+on npm with provenance. It does not rebuild or replace an existing npm version.
+The workflow pins npm 11.17.0 because staging requires npm 11.15.0 or newer.
 
-Publication uses npm Trusted Publishing when configured for
-`aspeer/pm-WebDyne-Cloudflare`, workflow `webdyne-cloudflare-npm.yml`, with direct
-publishing allowed and no environment restriction. A repository `NPM_TOKEN`
-secret provides a fallback for the initial publication. Configure any token
-with permission to publish this package in the `@webdyne` scope.
+Staging uses npm Trusted Publishing configured for
+`aspeer/pm-WebDyne-Cloudflare`, workflow `webdyne-cloudflare-npm.yml`, with only
+staged publishing allowed and no environment restriction. Direct publication
+is disabled; there is no `NPM_TOKEN` fallback. In the npm package settings,
+select "Require two-factor authentication and disallow tokens".
+
+A successful workflow means "Awaiting MFA approval", not a public release.
+Review the candidate in the npmjs.com Staged Packages tab and approve it with
+MFA. Alternatively, from an authenticated local terminal:
+
+```sh
+npm stage list @webdyne/webdyne-cloudflare
+npm stage view <stage-id>
+npm stage approve <stage-id>
+```
+
+Replace `<stage-id>` with the reviewed candidate's ID. Compare the staged
+archive against the qualified GitHub release before approval. After approval,
+check the public version and compare `dist.integrity` with that archive:
+
+```sh
+npm view @webdyne/webdyne-cloudflare@<version> version dist.integrity --json
+```
+
+Approval remains a maintainer action and is never performed by this workflow.
+Version 1.2.0 was published interactively as the initial package; staging is
+for subsequent versions. Do not rerun the old direct-publication job or attempt
+to restage 1.2.0. See the [npm staging guide](https://docs.npmjs.com/staged-publishing/).
 
 Only `README.md` and [TEST.md](TEST.md) are retained as root Markdown in the
 release branch. Module API sidecars remain beside the Perl source files;

@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   package:
-    name: Publish qualified npm package
+    name: Stage qualified npm package
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -45,16 +45,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      - name: Check npm trusted-publishing support
+      - name: Install npm with staged-publishing support
         run: |
-          npm_version="$(npm --version)"
-          node - "$npm_version" <<'NODE'
-          const [major, minor, patch] = process.argv[2].split('.').map(Number);
-          if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) {
-            throw new Error('npm 11.5.1 or newer is required for trusted publishing');
-          }
-          console.log(`Publishing with npm ${process.argv[2]}`);
-          NODE
+          set -euo pipefail
+          npm install --global npm@11.17.0 --ignore-scripts --registry=https://registry.npmjs.org/
+          test "$(npm --version)" = "11.17.0"
 
       - name: Resolve and validate package metadata
         env:
@@ -170,8 +165,8 @@ jobs:
             exit 1
           fi
 
-      - name: Dry-run npm publication
-        run: npm publish "./incoming/$TARBALL_NAME" --access public --dry-run --ignore-scripts
+      - name: Dry-run npm staging
+        run: npm stage publish "./incoming/$TARBALL_NAME" --access public --dry-run --ignore-scripts
 
       - name: Attest the npm publication candidate
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -189,10 +184,22 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish "./incoming/$TARBALL_NAME" --access public --provenance --ignore-scripts
+      - name: Stage on npm with Trusted Publishing
+        run: npm stage publish "./incoming/$TARBALL_NAME" --access public --provenance --ignore-scripts
 
-      - name: Verify published version
-        run: npm view "@webdyne/webdyne-cloudflare@$PACKAGE_VERSION" version dist.integrity --json
+      - name: Report pending maintainer approval
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+            '## Awaiting MFA approval',
+            '',
+            `Staged @webdyne/webdyne-cloudflare@${process.env.PACKAGE_VERSION}; it is not public yet.`,
+            '',
+            'Review the candidate in the npmjs.com Staged Packages tab and approve it with MFA.',
+            'Alternatively, use `npm stage list @webdyne/webdyne-cloudflare`, then `npm stage view <stage-id>` and `npm stage approve <stage-id>` from an authenticated local terminal.',
+            '',
+            'Approval is deliberately not automated. Verify the public version and archive integrity after approval.',
+            '',
+          ].join('\n'));
+          NODE

@@ -29,6 +29,15 @@ npm run pack:check
 - `t.js/*.test.mjs`: host adapters, capability isolation and expiry, batch
   dispatch, storage byte limits, registration recovery and smoke cleanup.
 - `t.js/check-package.mjs`: exact npm package identity and file allow-list.
+- `t.js/release-workflow.test.mjs`: staged-only publication commands, pinned
+  staging-capable npm, OIDC-only authentication and pending-approval reporting.
+  Commands are mocked; these tests do not upload or approve packages.
+
+Workflow changes can also be linted with `actionlint .github/workflows/*.yml`.
+A staging dry-run against the qualified 1.2.0 archive correctly refused its
+already-published version; nothing was uploaded. End-to-end OIDC staging and
+maintainer approval must be qualified with the next new version; a successful
+staging run alone does not verify public publication.
 
 ## Local Worker integration
 
@@ -73,7 +82,7 @@ use them only in isolated test environments.
 
 ## Qualification
 
-The current implementation passed 159 Perl assertions, 32 JavaScript tests,
+The current implementation passed 159 Perl assertions, 35 JavaScript tests,
 package checks and local D1/KV/R2 Worker integration. Batch rollback and cleanup
 were verified on local D1 through the existing Perl 5.44 WASM interpreter.
 Native qualification used Perl 5.42.2; CI additionally tests its Ubuntu Perl.

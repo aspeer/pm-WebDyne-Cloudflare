@@ -53,6 +53,7 @@ t.js/kv-host.test.mjs
 t.js/prepare-storage-smoke.mjs
 t.js/r2-host.test.mjs
 t.js/regressions.test.mjs
+t.js/release-workflow.test.mjs
 t.js/smoke-d1.mjs
 t.js/smoke-cleanup.test.mjs
 t.js/smoke-kv.mjs
