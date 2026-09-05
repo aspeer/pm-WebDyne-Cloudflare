@@ -105,7 +105,7 @@ jobs:
           mkdir -p dist
           npm pack --ignore-scripts --pack-destination dist --json > dist/pack.json
           test -f "dist/$TARBALL_NAME"
-          npm publish "dist/$TARBALL_NAME" --access public --dry-run --ignore-scripts
+          npm publish "./dist/$TARBALL_NAME" --access public --dry-run --ignore-scripts
           git diff --exit-code
           git diff --cached --exit-code
           if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
