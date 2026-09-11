@@ -85,4 +85,61 @@ my $row_hr={type => 'blob', base64 => 'AAH/', count => 0, empty => '', missing =
     is_deeply($db_or->prepare('SELECT payload')->raw()->get(), [["\0\1\xff", 0, '', undef]],
         'raw preserves blob, zero, empty and NULL values');
 }
+
+foreach my $service (qw(D1 KV R2)) {
+    my $class="WebDyne::Cloudflare::$service";
+    my $scope_hr={extensions => {'webdyne.cloudflare.'.lc($service) => {
+        version => 1, capability => 'unicode-test', bindings => ['DB'],
+    }}};
+    my $service_or=$class->new(scope => $scope_hr, binding => 'DB');
+    my $request_hr;
+    no strict 'refs';
+    local ${"$class\::HOST_CALL"}=sub {
+        $request_hr=$json_or->decode($_[0]);
+        return '{"ok":true,"result":null}';
+    };
+    my $bytes="caf\xc3\xa9";
+    my $text="caf\x{e9}";
+    utf8::upgrade($text);
+    if ($service eq 'D1') {
+        $service_or->prepare("SELECT '$bytes'")->bind(0, $bytes)->first($bytes)->get();
+        is($request_hr->{'sql'}, "SELECT '$text'", 'D1 SQL decodes UTF-8 bytes');
+        is($request_hr->{'column'}, $text, 'D1 column decodes UTF-8 bytes');
+        is_deeply($request_hr->{'params'}, [0, $text], 'D1 retains numeric and text parameters');
+    }
+    else {
+        $service_or->put($bytes, 0)->get();
+        is($request_hr->{'key'}, $text, "$service key decodes UTF-8 bytes");
+        like($json_or->encode($request_hr), qr/"value":"0"/, "$service numeric body is text");
+        $service_or->list(prefix => $bytes)->get() if ($service eq 'KV');
+        is($request_hr->{'prefix'}, $text, 'KV prefix decodes UTF-8 bytes') if ($service eq 'KV');
+        if ($service eq 'KV') {
+            $service_or->put_json('key', {$bytes => [$bytes, 0, JSON::PP::false()]})->get();
+            is_deeply($json_or->decode($request_hr->{'value'}),
+                {$text => [$text, 0, JSON::PP::false()]}, 'KV JSON normalizes nested text and retains types');
+        }
+        my %opt=($service eq 'KV') ? (metadata => {$bytes => $bytes})
+            : (custom_metadata => {$bytes => $bytes});
+        $service_or->put('key', '', %opt)->get();
+        my $name=($service eq 'KV') ? 'metadata' : 'custom_metadata';
+        is_deeply($request_hr->{$name}, {$text => $text}, "$service metadata decodes UTF-8 bytes");
+        is_deeply($opt{$name}, {$bytes => $bytes}, "$service leaves caller metadata unchanged");
+    }
+    my $future_or=($service eq 'D1') ? $service_or->first("SELECT '\xff'")
+        : $service_or->get("\xff");
+    ok($future_or->is_failed(), "$service rejects invalid UTF-8 before calling host");
+}
+my $cycle_ar=[];
+push(@{$cycle_ar}, $cycle_ar);
+eval {WebDyne::Cloudflare::json_value($cycle_ar)};
+like($@, qr/circular reference/, 'cyclic metadata fails without recursing indefinitely');
+@{$cycle_ar}=();
+my $byte_key="caf\xc3\xa9";
+my $text_key="caf\x{e9}";
+utf8::upgrade($text_key);
+eval {WebDyne::Cloudflare::json_value({$byte_key => 1, $text_key => 2})};
+like($@, qr/duplicate UTF-8 keys/, 'normalization rejects colliding byte and character keys');
+my $shared_hr={value => 0};
+is_deeply(WebDyne::Cloudflare::json_value([$shared_hr, $shared_hr]),
+    [{value => 0}, {value => 0}], 'shared acyclic metadata is accepted');
 done_testing();

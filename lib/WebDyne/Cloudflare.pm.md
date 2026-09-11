@@ -8,3 +8,8 @@ See [D1](Cloudflare/D1.pm.md), [KV](Cloudflare/KV.pm.md), and
 [R2](Cloudflare/R2.pm.md). Cloudflare binding objects stay in JavaScript.
 Each Perl facade carries only a request-scoped capability and binding name.
 Never retain a facade beyond the request which created it.
+
+Text inputs, including nested metadata keys and values, are normalized from
+unflagged UTF-8 without changing caller data. Invalid UTF-8, cyclic containers
+and duplicate normalized keys are rejected before calling the host. See
+[the usage guide](../../README.md#text-binary-data-and-errors).

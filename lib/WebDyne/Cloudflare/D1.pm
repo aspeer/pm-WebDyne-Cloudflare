@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Future::AsyncAwait;
+use WebDyne::Cloudflare ();
 use Encode qw(decode FB_CROAK);
 use JSON::PP ();
 use MIME::Base64 qw(decode_base64);
@@ -217,7 +218,7 @@ async sub execute {
         $wire_hr->{'params'}=[map { encode_parameter($_) } @{(defined($wire_hr->{'params'}) ? $wire_hr->{'params'} : [])}];
     }
 
-    my $response_wire=call_host($json_or->encode($wire_hr));
+    my $response_wire=call_host($json_or->encode(WebDyne::Cloudflare::json_value($wire_hr)));
     my $response_hr=eval { $json_or->decode($response_wire) };
     if ((ref($response_hr) ne 'HASH')||!exists($response_hr->{'ok'})) {
         my $detail=$@||'host returned an invalid response';

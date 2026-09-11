@@ -6,6 +6,7 @@ use warnings;
 
 use Encode qw(decode FB_CROAK);
 use Future::AsyncAwait;
+use WebDyne::Cloudflare ();
 use JSON::PP ();
 use MIME::Base64 qw(decode_base64);
 use Scalar::Util qw(blessed);
@@ -93,7 +94,7 @@ sub encode_text {
     die "KV value must be a scalar or KV blob\n" if (!defined($value_ref)||ref($value_ref));
     return decode('UTF-8', $value_ref, FB_CROAK)
         if (!utf8::is_utf8($value_ref)&&($value_ref=~/[\x80-\xff]/));
-    return $value_ref;
+    return "$value_ref";
 }
 
 
@@ -161,7 +162,7 @@ async sub put {
 
 async sub put_json {
     my ($self, $key, $value_ref, %opt)=@_;
-    return await $self->put($key, $json_or->encode($value_ref), %opt);
+    return await $self->put($key, $json_or->encode(WebDyne::Cloudflare::json_value($value_ref)), %opt);
 }
 
 
@@ -196,7 +197,7 @@ async sub execute {
         binding    => $self->{'binding'},
         %request,
     };
-    my $response_wire=call_host($json_or->encode($wire_hr));
+    my $response_wire=call_host($json_or->encode(WebDyne::Cloudflare::json_value($wire_hr)));
     my $response_hr=eval { $json_or->decode($response_wire) };
     if ((ref($response_hr) ne 'HASH')||!exists($response_hr->{'ok'})) {
         my $detail=$@||'host returned an invalid response';

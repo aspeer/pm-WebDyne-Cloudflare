@@ -1,19 +1,36 @@
 # WebDyne::Cloudflare
 
-`WebDyne::Cloudflare` is the npm-first `@webdyne/webdyne-cloudflare`
-extension. It provides Future-returning Perl facades for D1, Workers KV, and
-R2, together with the modular JavaScript adapters that own the real Cloudflare
-Worker bindings.
+`WebDyne::Cloudflare` lets Perl applications use Cloudflare D1 databases,
+Workers KV and R2 buckets. Install it as `@webdyne/webdyne-cloudflare` alongside
+[the WebDyne ZeroPerl runtime](https://github.com/aspeer/zeroperl/blob/main/WEBDYNE.md).
+The package includes the Perl modules and JavaScript adapters; you don't need
+to install the modules separately from CPAN. It works with PSP pages and plain
+PAGI applications which receive the extension's request scope.
 
-## Application installation
+Service operations return Futures. The real Cloudflare bindings stay in
+JavaScript, while Perl gets a small request-scoped handle. The module requires
+Perl 5.20 or later; the WASM integration is tested with Perl 5.44.
 
-Install this extension beside one qualified WebDyne ZeroPerl runtime:
+## Quick start
+
+In your application directory, install the runtime and extension:
 
 ```sh
-npm install @webdyne/webdyne-zeroperl-5.44.0@1 @webdyne/webdyne-cloudflare@1
+npm init -y                         # only for a new project
+npm install @webdyne/webdyne-zeroperl@1 @webdyne/webdyne-cloudflare@1
+npx webdyne-cloudflare init
 ```
 
-Enable the extension and identify only the bindings that Perl may access:
+Add the configuration below to package.json, using your resource names and IDs.
+Create `app/app.psp` (or copy the [example pages](examples/app)), then run
+`npm run dev`. The initializer creates directories and commands, not the page.
+For general routing, static assets and `.pagi` setup, see the runtime guide.
+
+## Configuration
+
+There are two parts: enable the extension and allow the binding names Perl may
+use, then tell Wrangler which resources those names refer to. Merge this
+`webdyne` object into your existing package.json:
 
 ```json
 {
@@ -50,11 +67,100 @@ Use only the arrays for services the application needs. The runtime's
 Worker, and emits D1, KV, and R2 binding configuration for Wrangler. npm
 installation itself runs no setup or deployment hooks.
 
+### Extension options
+
+Options live in `webdyne.extensions["@webdyne/webdyne-cloudflare"]`:
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `d1Bindings` | No bindings | Array of D1 names Perl may access, such as `["DB"]`. |
+| `kvBindings` | No bindings | Array of KV names, such as `["CACHE"]`. |
+| `r2Bindings` | No bindings | Array of R2 names, such as `["OBJECTS"]`. |
+| `kvMaxValueBytes` | `16777216` (16 MiB) | Maximum KV value payload handled by the bridge. |
+| `r2MaxObjectBytes` | `16777216` (16 MiB) | Maximum buffered R2 body handled by the bridge. |
+
+Binding names use uppercase letters, digits and underscores, starting with a
+letter or underscore. Use positive integer byte limits. An explicit empty
+binding array disables that service, including its compatibility-variable
+fallback. These options expose existing bindings; they don't create resources.
+
+### Resource definitions
+
+These arrays live in `webdyne.cloudflare` and are translated by the runtime
+CLI into **generated** Wrangler configuration:
+
+| Array | Required fields | Optional fields | Wrangler destination |
+| --- | --- | --- | --- |
+| `d1Databases` | `binding`, `databaseName`, `databaseId` | `previewDatabaseId` | `d1_databases`: `binding`, `database_name`, `database_id`, `preview_database_id` |
+| `kvNamespaces` | `binding` | `namespaceId`, `previewNamespaceId`, `remote` | `kv_namespaces`: `binding`, `id`, `preview_id`, `remote` |
+| `r2Buckets` | `binding` | `bucketName`, `previewBucketName`, `jurisdiction`, `remote` | `r2_buckets`: `binding`, `bucket_name`, `preview_bucket_name`, `jurisdiction`, `remote` |
+
+Supply the actual resource identifiers for deployment. KV/R2 allow omitted IDs
+or names for local development with the bundled Wrangler. `remote: true`
+selects real resources during development where supported; omit it for the
+usual local storage workflow. Provisioning resources and creating a D1 schema
+are separate from enabling the extension.
+
+If you maintain a root `wrangler.jsonc` or select one with
+`webdyne.cloudflare.wranglerConfig`, the runtime leaves it untouched. Put the
+resource definitions in that file using Wrangler's names, while keeping the
+extension allow-lists in package.json. For example, the equivalent binding
+fragment is:
+
+```json
+{
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "webdyne-time",
+    "database_id": "CLOUDFLARE-DATABASE-ID"
+  }],
+  "kv_namespaces": [{
+    "binding": "CACHE",
+    "id": "CLOUDFLARE-KV-NAMESPACE-ID"
+  }],
+  "r2_buckets": [{
+    "binding": "ASSETS",
+    "bucket_name": "my-webdyne-assets"
+  }]
+}
+```
+
+This is a fragment to merge into a working runtime configuration, not a whole
+Worker config. Keep its entrypoint, module rules, runtime variables and
+`enable_request_signal` flag. Rebuild after changing package options or Perl
+modules. Once local checks pass, use `npm run login`, `npm run whoami` and
+`npm run deploy` to deploy the configured application.
+
+## Request lifetime and Futures
+
 Cloudflare objects never cross the JavaScript/Perl boundary. The adapter
 places separate opaque, request-scoped capabilities and binding allow-lists in
 the PAGI `webdyne.cloudflare.d1`, `webdyne.cloudflare.kv`, and
 `webdyne.cloudflare.r2` extensions. Every capability is deleted when the
-request finishes.
+request finishes. Construct service objects inside the request and don't cache
+them, prepared statements or pending operations in package globals for later
+requests. Lifespan startup has no request service capabilities.
+
+In a PSP handler use `$self->r()->{'scope'}`. In a plain PAGI application use
+the `$scope_hr` passed to the application. The extension must be enabled in
+either case. Native Perl alone cannot access a binding without a host adapter.
+
+The examples use `->get()` to retrieve results, as the included PSP examples
+do. In an asynchronous Perl handler use `await` with Future::AsyncAwait:
+
+```perl
+use Future::AsyncAwait;
+
+async sub read_name {
+    my ($scope_hr, $id)=@_;
+    my $db_or=WebDyne::Cloudflare::D1->new(scope => $scope_hr, binding => 'DB');
+    return await $db_or->prepare('SELECT name FROM thing WHERE id = ?1')
+        ->bind($id)->first('name');
+}
+```
+
+Load the service module as shown below. Await all service work within the
+request; dropping a Future does not arrange background execution.
 
 ## Perl APIs
 
@@ -79,6 +185,18 @@ ordered SQLite placeholders such as `?1`; the adapter does not interpolate
 SQL. `undef`, strings, numbers, JSON booleans, and explicit D1 BLOB wrappers
 are supported. Errors fail with `WebDyne::Cloudflare::D1::Error`.
 
+The D1 constructor defaults to binding `DB`; `binding()` returns its name.
+`prepare($sql)` returns a statement, and `bind(@params)` returns a new statement
+without modifying the original. You can reuse statements within their request.
+
+| Operation | Future result |
+| --- | --- |
+| `run()` / `all()` | D1 result hash with `results`, `meta` and `success`. |
+| `first()` | First row hash, or undef when no row exists. |
+| `first($column)` | One column value, including decoded BLOB bytes. |
+| `raw(column_names => 1)` | Arrays of column values, with an optional header row. |
+| Database `run($sql, @params)`, `all(...)`, `first(...)` | Convenience calls without explicitly preparing a statement. |
+
 Use `batch()` for an atomic sequence of prepared statements:
 
 ```perl
@@ -94,7 +212,8 @@ Results preserve statement order, with the usual `results`, `meta` and
 `success` fields. A failed statement rolls back the whole batch and fails the
 Future. Use a non-empty array of statements prepared by that same database
 object. All statements are supplied up front; the batch does not pause for
-Perl code between statements. See [the D1 API](lib/WebDyne/Cloudflare/D1.pm.md).
+Perl code between statements. See [the D1 API](lib/WebDyne/Cloudflare/D1.pm.md) and
+[Cloudflare's batch semantics](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch).
 
 ### Workers KV
 
@@ -116,6 +235,20 @@ my $keys_hr=$kv_or->list(prefix => 'greet')->get();
 `type => 'bytes'`; binary writes use `WebDyne::Cloudflare::KV->blob($bytes)`.
 Errors use `WebDyne::Cloudflare::KV::Error`.
 
+| Operation | Options and result |
+| --- | --- |
+| `get($key, %opt)` | `type` is `text` (default), `json` or `bytes`; optional `cache_ttl` is at least 30 seconds. Missing keys return undef. |
+| `get_with_metadata($key, %opt)` | Same read options; returns `value`, `metadata` and optional `cache_status`. |
+| `put($key, $value, %opt)` | Text or a KV blob. Optional `expiration` (Unix seconds) or `expiration_ttl` (at least 60 seconds), plus a metadata hash. Don't supply both expiration options. |
+| `put_json($key, $value_ref, %opt)` | JSON-encodes a Perl value; accepts the same write options. |
+| `delete($key)` | Deletes the key. |
+| `list(%opt)` | Optional `prefix`, `cursor` and `limit`; returns `keys`, `list_complete` and `cursor`. Follow the cursor until complete. |
+
+The constructor defaults to binding `KV`; pass `CACHE` when using the example
+configuration. KV is eventually consistent, so reads may return older data.
+See [the KV API](lib/WebDyne/Cloudflare/KV.pm.md) and
+[Cloudflare's consistency explanation](https://developers.cloudflare.com/kv/concepts/how-kv-works/).
+
 ### R2
 
 ```perl
@@ -135,17 +268,63 @@ $r2_or->put(
 my $object_or=$r2_or->get('reports/latest.bin')->get();
 ```
 
-`get`, `head`, `put`, `delete`, `delete_many`, and `list` return `Future`
-objects. `WebDyne::Cloudflare::R2::Object` contains object metadata and, for
-`get`, the byte body. This release buffers R2 bodies and caps both KV values
-and R2 bodies at 16 MiB by default. Applications can set `kvMaxValueBytes` and
-`r2MaxObjectBytes` in the extension options. Streaming, multipart uploads,
-conditional requests, and signed/public URLs are not part of this first R2
-surface.
+The constructor defaults to binding `R2`; use `ASSETS` for the configuration
+above. This binding name is your R2 bucket handle and is separate from
+Cloudflare's static asset serving.
 
-Unflagged non-ASCII Perl text is decoded strictly as UTF-8 before it crosses
-the bridge. Invalid byte strings must use the service's explicit `blob`
-wrapper; returned binary values become ordinary Perl byte strings.
+| Operation | Options and result |
+| --- | --- |
+| `get($key, %opt)` | Buffered Object or undef; optional `range => {offset => 0, length => 1024}` or `{suffix => 1024}`. |
+| `head($key)` | Object metadata without a body, or undef. |
+| `put($key, $value, %opt)` | Text or R2 blob; returns Object metadata. Options: `http_metadata`, `custom_metadata`, `storage_class`. |
+| `delete($key)` | Deletes one key. |
+| `delete_many(@keys)` | Deletes 1–1000 keys. |
+| `list(%opt)` | Options: `prefix`, `cursor`, `delimiter`, `limit`, `include`. Returns `objects`, `truncated`, optional `cursor` and `delimited_prefixes`. |
+
+These operations return Futures. `list` entries are Object wrappers; follow
+the cursor while `truncated` is true. To include metadata, pass
+`include => ['httpMetadata', 'customMetadata']`.
+
+HTTP metadata uses `content_type`, `content_language`, `content_disposition`,
+`content_encoding`, `cache_control` and `cache_expiry` (an ISO date).
+Custom metadata is a hash whose values are sent as strings.
+
+`WebDyne::Cloudflare::R2::Object` has synchronous accessors: `key()`, `version()`,
+`size()`, `etag()`, `http_etag()`, `uploaded()`, `http_metadata()`,
+`custom_metadata()`, `storage_class()`, `range()` and `body()`. Only a `get`
+result has a byte body. `as_hash()` returns a shallow copy; nested metadata
+remains shared. See [the R2 API](lib/WebDyne/Cloudflare/R2.pm.md).
+
+## Text, binary data and errors
+
+Perl character strings cross as text. Unflagged non-ASCII strings are decoded
+strictly as UTF-8, including SQL, keys, column names and nested metadata/JSON
+keys and values. Invalid UTF-8 fails before the host call. Normalization copies
+containers without changing caller data; cycles and keys which become identical
+after UTF-8 decoding are rejected.
+
+Use the service's `blob($bytes)` wrapper for binary values. Returned binary
+data becomes ordinary Perl byte strings. D1 preserves numbers, zero, empty
+strings, JSON booleans and SQL NULL (`undef`). KV/R2 `put` treats a plain numeric
+body as text; use KV `put_json` to retain JSON numeric/boolean types.
+
+Missing capabilities or invalid constructor arguments throw immediately.
+Service operations fail their Future on errors. Host errors use
+`WebDyne::Cloudflare::D1::Error`, `KV::Error` or `R2::Error`, with `name()`,
+`message()`, `code()` and `cause()` accessors and stringification. Local input
+validation errors can be plain exceptions. Catch failures around `await` or
+`->get()`; don't assume every exception is a service Error object.
+
+KV values and R2 bodies are buffered, with a default bridge limit of 16 MiB.
+KV provider reads are buffered before the limit check; it is not a streaming
+memory guarantee. R2 rejects oversized reads and cancels unread bodies.
+Increasing the limits increases interpreter/Worker memory pressure and does
+not lift Cloudflare's own service limits.
+
+D1 sessions, R2 streaming, multipart uploads, conditional requests, signed URL
+generation, automatic retries and active operation cancellation are not
+implemented. Use the documented methods rather than assuming the complete
+JavaScript binding API is available in Perl.
 
 ## Source and documentation layout
 
@@ -197,6 +376,11 @@ paths for custom Workers.
 
 ## Release packaging
 
+This README describes current main. The UTF-8 normalization and numeric-body
+fixes are source changes for the next package release; the existing 1.2.0
+publication is not replaced by merging them. Select a new package version
+before running the release workflow.
+
 `npm run pack:check` verifies the exact public package allow-list. The
 `WebDyne Cloudflare release` GitHub workflow runs the Perl and JavaScript
 suites through MakeMaker, checks the source manifest, audits dependencies,
@@ -239,9 +423,9 @@ Version 1.2.0 was published interactively as the initial package; staging is
 for subsequent versions. Do not rerun the old direct-publication job or attempt
 to restage 1.2.0. See the [npm staging guide](https://docs.npmjs.com/staged-publishing/).
 
-Only `README.md` and [TEST.md](TEST.md) are retained as root Markdown in the
-release branch. Module API sidecars remain beside the Perl source files;
-development planning notes remain on the development branches.
+Module API sidecars remain beside the Perl source files. See [TEST.md](TEST.md)
+for test commands and qualification limits. The maintained branches are `main`
+and `development`.
 
 ## Development
 

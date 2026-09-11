@@ -23,7 +23,8 @@ npm run pack:check
 - `t/02-kv.t`: text, JSON, bytes, metadata and listing.
 - `t/03-r2.t`: buffered objects, metadata, ranges, listing and deletion.
 - `t/04-regressions.t`: malformed capabilities, binary validation and D1
-  column names that resemble internal envelopes.
+  column names that resemble internal envelopes, UTF-8 normalization, numeric
+  text bodies, immutable caller metadata, cycles and normalized-key collisions.
 - `t/05-d1-batch.t`: ordered atomic batch requests, statement ownership,
   reusable parameters, BLOB results and structured failures.
 - `t.js/*.test.mjs`: host adapters, capability isolation and expiry, batch
@@ -82,13 +83,28 @@ use them only in isolated test environments.
 
 ## Qualification
 
-The current implementation passed 159 Perl assertions, 35 JavaScript tests,
+The current implementation passed 178 Perl assertions, 35 JavaScript tests,
 package checks and local D1/KV/R2 Worker integration. Batch rollback and cleanup
 were verified on local D1 through the existing Perl 5.44 WASM interpreter.
-Native qualification used Perl 5.42.2; CI additionally tests its Ubuntu Perl.
+This review used native Perl 5.44.0; earlier qualification used 5.42.2; CI additionally tests its Ubuntu Perl.
 The declared Perl 5.20 minimum has not yet been separately qualified.
 
 Earlier remote checks qualified basic D1 and KV operations. Remote batch and
 R2 qualification remain outstanding. The current embedded CGI::Simple::Cookie
 dependency emits two `lc` ambiguity warnings during cold initialization;
 requests and tests complete successfully.
+
+## Source review (2026-09-11)
+
+The UTF-8 and numeric-body fixes pass 178 native assertions, 35 JavaScript
+tests, Perl syntax checks, source manifest and npm package inventory checks.
+A separately installed extension tarball with the 1.0.6 runtime passes a
+Wrangler dry run and local D1/KV/R2 smoke tests, including 24 concurrent D1
+reads, eight batch sequences, rollback, binary values and cleanup.
+No hosted deployment or package publication was performed.
+
+An online audit of the runtime consumer reports the high-severity
+GHSA-rgj7-g3m4-5g8c sharp advisory through the pinned Miniflare/Wrangler chain
+(four dependency entries). Toolchain upgrade/qualification remains a release
+follow-up; this review did not change those dependencies. Offline npm install
+reporting zero vulnerabilities does not supersede that online audit.

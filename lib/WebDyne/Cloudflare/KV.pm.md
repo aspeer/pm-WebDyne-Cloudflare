@@ -23,3 +23,8 @@ and returned values. Provider reads are buffered before this check; this is a
 bridge payload limit, not a streaming-memory guarantee.
 Errors fail with [KV::Error](KV/Error.pm.md). Invalid capabilities throw at
 construction. Internal validation and host-call helpers are not supported API.
+
+Text inputs, including nested metadata keys and values, are normalized from
+unflagged UTF-8 without changing caller data. Invalid UTF-8, cyclic containers
+and duplicate normalized keys are rejected before calling the host. See
+[the usage guide](../../../README.md#text-binary-data-and-errors).
