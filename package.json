@@ -1,6 +1,6 @@
 {
   "name": "@webdyne/webdyne-cloudflare",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Cloudflare service extensions for WebDyne running under WebAssembly",
   "type": "module",
   "files": [
@@ -15,7 +15,9 @@
     "./d1-host": "./js/d1-host.js",
     "./kv-host": "./js/kv-host.js",
     "./r2-host": "./js/r2-host.js",
-    "./webdyne-extension.json": "./webdyne-extension.json"
+    "./webdyne-extension.json": "./webdyne-extension.json",
+    "./hyperdrive": "./js/hyperdrive.js",
+    "./hyperdrive-host": "./js/hyperdrive-host.js"
   },
   "scripts": {
     "test": "npm run test:perl && npm run test:js",
@@ -48,5 +50,8 @@
   },
   "devDependencies": {
     "wrangler": "4.127.1"
+  },
+  "dependencies": {
+    "pg": "8.16.3"
   }
 }

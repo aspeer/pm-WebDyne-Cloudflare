@@ -4,7 +4,15 @@
   "providers": {
     "cloudflare": {
       "module": "./cloudflare",
-      "factory": "createWebDyneCloudflareExtension"
+      "factory": "createWebDyneCloudflareExtension",
+      "variants": [
+        {
+          "whenOption": "hyperdriveBindings",
+          "module": "./hyperdrive",
+          "factory": "createWebDyneHyperdriveExtension",
+          "compatibilityFlags": ["nodejs_compat"]
+        }
+      ]
     }
   }
 }

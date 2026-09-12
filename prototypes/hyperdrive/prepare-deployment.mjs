@@ -1,0 +1,21 @@
+import {randomBytes} from "node:crypto";
+import {cp, readFile, writeFile} from "node:fs/promises";
+import {dirname, resolve} from "node:path";
+import {fileURLToPath} from "node:url";
+
+const destination = resolve(process.argv[2] ?? '/private/tmp/webdyne-hyperdrive-phase1');
+const source = dirname(fileURLToPath(import.meta.url));
+for (const file of ['deployed-worker.js', 'auth.js']) await cp(resolve(source, file), resolve(destination, file));
+for (const file of ['host.js', 'evidence.js', 'package.json']) await cp(resolve(source, file), resolve(destination, 'extension', file));
+await cp(resolve(source, 'app/app.pagi'), resolve(destination, 'app/app.pagi'));
+const config = JSON.parse(await readFile(resolve(destination, 'wrangler.jsonc'), 'utf8'));
+config.name = `webdyne-hyperdrive-probe-${randomBytes(4).toString('hex')}`;
+config.main = 'deployed-worker.js';
+config.workers_dev = true;
+config.preview_urls = false;
+config.observability = {enabled: true, traces: {enabled: true}};
+config.vars.PROTOTYPE_RECORD_EVIDENCE = '1';
+config.vars.PROTOTYPE_EXPIRES = String(Date.now() + 3600_000);
+await writeFile(resolve(destination, 'wrangler-deployed.jsonc'), JSON.stringify(config, null, 2), {flag: 'wx'});
+await writeFile(resolve(destination, '.deployment-secrets.json'), JSON.stringify({PROTOTYPE_TOKEN: randomBytes(32).toString('hex')}), {mode: 0o600, flag: 'wx'});
+console.log(JSON.stringify({worker: config.name, expires: new Date(Number(config.vars.PROTOTYPE_EXPIRES)).toISOString()}));

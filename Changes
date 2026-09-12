@@ -1,3 +1,10 @@
+1.3.0  2026-09-12
+    Add asynchronous PostgreSQL CRUD, statements and transactions through Hyperdrive.
+    Preserve exact numeric, JSON, timestamp and bytea values; enforce request ownership.
+    Bound queries/results/cleanup, preserve SQLSTATE, and redact socket errors.
+    Select the PostgreSQL provider declaratively with ZeroPerl 1.0.11 or later.
+    Add generated-app and authenticated live WASM qualification.
+
 1.2.0  2026-09-05
     Add Future-returning D1 batch() with ordered results and atomic provider execution.
     Validate all statements/parameters before dispatch; require the same database owner.

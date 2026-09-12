@@ -1,0 +1,45 @@
+{
+  "runtime": "1.0.10-dev.20260912084020282.g88341fd6377a",
+  "wasmSource": "official 1.0.9 archive verified by the runtime pack:dev tool",
+  "extension": "1.3.0",
+  "pg": "8.16.3",
+  "wrangler": "4.127.1",
+  "worker": "webdyne-hyperdrive-qual-6909cd5f",
+  "workerVersion": "25c9de22-0f8f-4518-8444-c53c30c239e6",
+  "cachingDisabledVerified": true,
+  "sourceSha256": {
+    "js/hyperdrive-host.js": "7b6be2cfe616ff2d6b31a55428b54f3ead1a9d35a4c783bc1c2bb287e32cc488",
+    "js/hyperdrive-pg.js": "9977562812bd93c11f8a4bc124c87fc70c12cfbe14cbf0617c7354036af972bd",
+    "js/hyperdrive-codec.js": "8a137b4a602d2c2ca32d6a8058ce48ff4ee76e6f91d655ac450ec8240b7935ac",
+    "js/hyperdrive.js": "9d5c9e2203d320a669804534c4cee1456c22eed19a5d2167c8b62c5113a2c5e0",
+    "webdyne-extension.json": "3f67abb693acd1d8d933119ce1d93904c9816a483017baa59d470c87bdeb5813",
+    "prototypes/hyperdrive-qualification/app.pagi": "5c3167791b23d1b226315dea2adfede082d1886c7284246b8802a27ff7e85911",
+    "prototypes/hyperdrive-qualification/worker.js": "e5e6cabb8aa902f6bfebbda47b3dea00b230a9b19a8cf7b3cf47dad12c7a6672",
+    "prototypes/hyperdrive-qualification/stage.mjs": "ed2198931c96c5664ea48600774b84e8aef6c2b2c16831c605644bb4abffe170",
+    "prototypes/hyperdrive-qualification/smoke.mjs": "f56934515f2a2a28949007cdf3eaa8b179ff9b5d414fceb013f0382dfd86b4d7"
+  },
+  "pgCloudflare": "1.4.0",
+  "release": {
+    "runtime": "1.0.11",
+    "workflowRun": "https://github.com/aspeer/zeroperl/actions/runs/34684893846",
+    "source": {
+      "repository": "https://github.com/aspeer/zeroperl",
+      "revision": "8cdad5a70698256cb5e7789ba70b03abf557493b",
+      "dirty": false,
+      "zeroperlTsRevision": "7e91d2cfd3e2c42c3d5ecb97cf81d739f8d83a71"
+    },
+    "wasm": {
+      "filename": "zeroperl-webdyne-5.44.0-1.0.11.wasm",
+      "bytes": 14296122,
+      "sha256": "10ccc610e85bc94ec633343dc7e96bb1f05f278ffd9350731d41a5eb78283f5a"
+    },
+    "archiveSha256": "7e536ad354f3d29a858d14a911502fe7da4124949db45d3544659e4e6b4c27ee",
+    "workerVersion": "99a75959-accf-4951-a854-a8731a54470f",
+    "qualificationFinished": "2026-09-12T09:22:23.810Z"
+  },
+  "cleanup": {
+    "workerDeleted": true,
+    "absenceVerifiedCode": 10007,
+    "localSecretRemoved": true
+  }
+}

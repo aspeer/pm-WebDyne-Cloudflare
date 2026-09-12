@@ -1,7 +1,7 @@
 # WebDyne::Cloudflare
 
 `WebDyne::Cloudflare` lets Perl applications use Cloudflare D1 databases,
-Workers KV and R2 buckets. Install it as `@webdyne/webdyne-cloudflare` alongside
+Workers KV, R2 buckets and PostgreSQL through Hyperdrive. Install it as `@webdyne/webdyne-cloudflare` alongside
 [the WebDyne ZeroPerl runtime](https://github.com/aspeer/zeroperl/blob/main/WEBDYNE.md).
 The package includes the Perl modules and JavaScript adapters; you don't need
 to install the modules separately from CPAN. It works with PSP pages and plain
@@ -10,6 +10,13 @@ PAGI applications which receive the extension's request scope.
 Service operations return Futures. The real Cloudflare bindings stay in
 JavaScript, while Perl gets a small request-scoped handle. The module requires
 Perl 5.20 or later; the WASM integration is tested with Perl 5.44.
+
+Hyperdrive/PostgreSQL support requires ZeroPerl 1.0.11 or later. The
+[asynchronous Perl API](lib/WebDyne/Cloudflare/Hyperdrive.pm.md) now supports
+DBI-style queries, statements and transactions, with live WASM CRUD validation.
+generator selects the separate `./hyperdrive` npm entry point when enabled and
+adds Node compatibility to generated Wrangler configuration. The runtime awaits
+request cleanup. See TEST.md for the current validation scope.
 
 ## Quick start
 
@@ -66,6 +73,47 @@ Use only the arrays for services the application needs. The runtime's
 `/perl5/lib`, statically imports its Cloudflare adapter into the generated
 Worker, and emits D1, KV, and R2 binding configuration for Wrangler. npm
 installation itself runs no setup or deployment hooks.
+
+### Hyperdrive / PostgreSQL
+
+Enable Hyperdrive and map the binding to an existing configuration:
+
+```json
+{
+  "webdyne": {
+    "extensions": {
+      "@webdyne/webdyne-cloudflare": { "hyperdriveBindings": ["DB"] }
+    },
+    "cloudflare": {
+      "hyperdrive": [{ "binding": "DB", "id": "YOUR_32_HEX_HYPERDRIVE_ID" }]
+    }
+  }
+}
+```
+
+Use extension 1.3.0 and runtime 1.0.11 or later, then run `webdyne-cloudflare check`
+or `deploy`. No custom extension manifest or generated Worker edits are needed.
+D1/KV/R2-only builds retain their original provider. User-owned Wrangler files
+remain untouched; add the Hyperdrive binding and `nodejs_compat` yourself in that
+case. Choose distinct binding names when combining services.
+
+For local development, put the connection string in the private environment
+variable `WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB`. Do not put credentials
+in package.json. Use a caching-disabled Hyperdrive configuration when CRUD reads
+must immediately reflect writes; Hyperdrive does not invalidate cached reads on
+writes. See [Cloudflare local development](https://developers.cloudflare.com/hyperdrive/configuration/local-development/)
+and [query caching](https://developers.cloudflare.com/hyperdrive/concepts/query-caching/).
+
+```perl
+my $db_or=WebDyne::Cloudflare::Hyperdrive->new(scope => $scope_hr);
+my $customer_hr=await $db_or->selectrow_hashref(
+    'SELECT id, name FROM customers WHERE id=$1', undef, $customer_id);
+await $db_or->disconnect();
+```
+
+The [API reference](lib/WebDyne/Cloudflare/Hyperdrive.pm.md) covers transaction
+callbacks, DBI-style attribute positions, exact types, deadlines and errors.
+The [inventory example](examples/hyperdrive) includes configuration and sample SQL.
 
 ### Extension options
 

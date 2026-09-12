@@ -1,6 +1,7 @@
 import { D1HostBridge, d1BindingNames } from "./d1-host.js";
 import { KVHostBridge, kvBindingNames } from "./kv-host.js";
 import { R2HostBridge, r2BindingNames } from "./r2-host.js";
+import { HyperdriveHostBridge, hyperdriveBindingNames } from "./hyperdrive-host.js";
 
 function configuredBindingNames(options, name, fallback) {
   return options[name] === undefined ? undefined : fallback(options[name]);
@@ -8,17 +9,28 @@ function configuredBindingNames(options, name, fallback) {
 
 function releaseAll(attachments) {
   let released = false;
+  let completion;
   return {
-    release() {
-      if (released) return;
+    release(context) {
+      if (released) return completion;
       released = true;
       const errors = [];
+      const pending = [];
       for (const attachment of attachments.reverse()) {
         try {
-          attachment.release();
+          const result = attachment.release(context);
+          if (result && typeof result.then === "function") pending.push(result);
         } catch (error) {
           errors.push(error);
         }
+      }
+      if (pending.length) {
+        completion = Promise.allSettled(pending).then(results => {
+          errors.push(...results.filter(result => result.status === "rejected").map(result => result.reason));
+          if (errors.length === 1) throw errors[0];
+          if (errors.length > 1) throw new AggregateError(errors, "Cloudflare capability cleanup failed");
+        });
+        return completion;
       }
       if (errors.length === 1) throw errors[0];
       if (errors.length > 1) throw new AggregateError(errors, "Cloudflare capability cleanup failed");
@@ -40,9 +52,11 @@ export function createWebDyneCloudflareExtension(options = {}) {
   const configuredD1Bindings = configuredBindingNames(options, "d1Bindings", d1BindingNames);
   const configuredKVBindings = configuredBindingNames(options, "kvBindings", kvBindingNames);
   const configuredR2Bindings = configuredBindingNames(options, "r2Bindings", r2BindingNames);
+  const configuredHyperdriveBindings = configuredBindingNames(options, "hyperdriveBindings", hyperdriveBindingNames);
   const d1 = new D1HostBridge();
   const kv = new KVHostBridge({ maxValueBytes: options.kvMaxValueBytes });
   const r2 = new R2HostBridge({ maxObjectBytes: options.r2MaxObjectBytes });
+  const hyperdrive = new HyperdriveHostBridge({ ...options.hyperdriveLimits, clientFactory: options.hyperdriveClientFactory });
 
   return {
     name: "@webdyne/webdyne-cloudflare",
@@ -51,9 +65,10 @@ export function createWebDyneCloudflareExtension(options = {}) {
       d1.register(perl);
       kv.register(perl);
       r2.register(perl);
+      if (options.hyperdriveClientFactory || configuredHyperdriveBindings?.length) hyperdrive.register(perl);
     },
 
-    attachScope({ scope, bindings }) {
+    attachScope({ scope, bindings, request, lifecycle }) {
       const attachments = [];
       try {
         attachments.push(d1.attachScope(
@@ -71,6 +86,9 @@ export function createWebDyneCloudflareExtension(options = {}) {
           bindings,
           configuredR2Bindings ?? r2BindingNames(bindings?.WEBDYNE_R2_BINDINGS),
         ));
+        attachments.push(hyperdrive.attachScope(scope, bindings,
+          configuredHyperdriveBindings ?? hyperdriveBindingNames(bindings?.WEBDYNE_HYPERDRIVE_BINDINGS),
+          { request, asyncCleanup: lifecycle?.asyncCleanup === true }));
       } catch (error) {
         try {
           releaseAll(attachments).release();

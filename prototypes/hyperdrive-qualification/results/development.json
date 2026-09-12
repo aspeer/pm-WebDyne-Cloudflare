@@ -1,0 +1,118 @@
+{
+  "started": "2026-09-12T09:20:20.704Z",
+  "cases": [
+    {
+      "route": "/run",
+      "token": "5de2db62-51a0-48e1-8eda-8cbc16d7456c",
+      "result": {
+        "status": 200,
+        "body": "{\"crud\":1,\"transactions\":1,\"typed\":1,\"disconnect\":1,\"fixture\":1,\"statement\":1}",
+        "completion": "fulfilled"
+      },
+      "passed": true,
+      "cleanup": {
+        "deleted": 1
+      },
+      "cleanupVerified": true
+    },
+    {
+      "route": "/sql",
+      "token": "ef73f6f3-df05-4633-8937-41cb94622f84",
+      "result": {
+        "status": 200,
+        "body": "{\"joins\":1,\"types\":1,\"binding\":1,\"returning\":1}",
+        "completion": "fulfilled"
+      },
+      "passed": true,
+      "cleanup": {
+        "deleted": 0
+      },
+      "cleanupVerified": true
+    },
+    {
+      "route": "/limits",
+      "token": "faea07e3-1e57-4ae6-b9b1-0d7e8a8a93ca",
+      "result": {
+        "status": 200,
+        "body": "{\"rows\":1,\"connections\":1,\"timeout\":1,\"bytes\":1}",
+        "completion": "fulfilled"
+      },
+      "passed": true,
+      "cleanup": {
+        "deleted": 0
+      },
+      "cleanupVerified": true
+    },
+    {
+      "route": "/network",
+      "token": "f1502555-023b-41f4-aa3c-45a1ce542323",
+      "result": {
+        "status": 200,
+        "body": "{\"recovered\":1,\"error\":\"CONNECTION_ERROR\"}",
+        "completion": "fulfilled"
+      },
+      "passed": true,
+      "cleanup": {
+        "deleted": 0
+      },
+      "cleanupVerified": true
+    },
+    {
+      "route": "/sequence",
+      "token": "289b8d9b-b92d-422a-beb1-8e64d1727aff",
+      "result": [
+        {
+          "path": "/prime",
+          "status": 200,
+          "body": "{\"primed\":1}",
+          "completion": "fulfilled"
+        },
+        {
+          "path": "/stale",
+          "status": 200,
+          "body": "{\"stale\":1}",
+          "completion": "fulfilled"
+        },
+        {
+          "path": "/failure",
+          "status": 500,
+          "body": "<!doctype html><title>WebDyne PAGI Runtime Error</title><h1>Internal Server Error</h1><p>Reference: pagi-1</p>\n",
+          "completion": "rejected"
+        },
+        {
+          "path": "/health",
+          "status": 200,
+          "body": "{\"fresh_interpreter\":1}",
+          "completion": "fulfilled"
+        }
+      ],
+      "passed": true,
+      "cleanup": {
+        "deleted": 0
+      },
+      "cleanupVerified": true
+    },
+    {
+      "route": "/abort",
+      "token": "e943a2b5-e878-4b33-a131-8f982e42036c",
+      "activeSleepObserved": true,
+      "completion": {
+        "status": "rejected",
+        "aborted": true
+      },
+      "passed": true,
+      "cleanup": {
+        "deleted": 1
+      },
+      "cleanupVerified": true
+    }
+  ],
+  "auth": true,
+  "concurrentRecovery": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "finished": "2026-09-12T09:20:37.499Z"
+}

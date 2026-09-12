@@ -1,0 +1,126 @@
+{
+  "base": "https://webdyne-hyperdrive-probe-7b150aac.andrew-speer.workers.dev",
+  "startedAt": "2026-09-12T07:36:52.825Z",
+  "tests": [
+    {
+      "route": "/core",
+      "evidence": {
+        "token": "8614b935-c074-4e5b-982b-50f467531c11",
+        "attachedAt": 1789198613102,
+        "requestAborted": false,
+        "rolledBack": true,
+        "openedAt": 1789198613107,
+        "releaseStartedAt": 1789198614210,
+        "rolledBackAt": 1789198614237,
+        "closedAt": 1789198614237,
+        "completion": "fulfilled",
+        "completedAt": 1789198614237
+      },
+      "activity": null,
+      "remaining": 0
+    },
+    {
+      "route": "/fail",
+      "evidence": {
+        "token": "61ae6880-a8ba-4bf6-b2c9-bb41f4e8db7a",
+        "attachedAt": 1789198614678,
+        "requestAborted": false,
+        "rolledBack": true,
+        "openedAt": 1789198614680,
+        "releaseStartedAt": 1789198614899,
+        "rolledBackAt": 1789198614921,
+        "closedAt": 1789198614921,
+        "completion": "rejected",
+        "completedAt": 1789198614921
+      },
+      "activity": null,
+      "remaining": 0
+    },
+    {
+      "route": "/abort",
+      "evidence": {
+        "token": "7d4b7efc-f37e-4646-b4e1-625e054970cb",
+        "attachedAt": 1789198615024,
+        "requestAborted": true,
+        "rolledBack": true,
+        "openedAt": 1789198615026,
+        "backendPid": 702,
+        "queryStartedAt": 1789198615358,
+        "abortedAt": 1789198615552,
+        "queryFinishedAt": 1789198620531,
+        "releaseStartedAt": 1789198620531,
+        "rolledBackAt": 1789198620555,
+        "closedAt": 1789198620555,
+        "completion": "rejected",
+        "completedAt": 1789198620555
+      },
+      "activity": null,
+      "remaining": 0
+    },
+    {
+      "route": "/core-after-abort",
+      "evidence": {
+        "token": "c202f8ff-5cc1-41f6-9f86-77ff06220595",
+        "attachedAt": 1789198691908,
+        "requestAborted": false,
+        "rolledBack": true,
+        "openedAt": 1789198691910,
+        "releaseStartedAt": 1789198692166,
+        "rolledBackAt": 1789198692194,
+        "closedAt": 1789198692194,
+        "completion": "fulfilled",
+        "completedAt": 1789198692194
+      },
+      "activity": null,
+      "remaining": 0
+    }
+  ],
+  "authentication": true,
+  "queryWasRunning": {
+    "evidence": {
+      "token": "7d4b7efc-f37e-4646-b4e1-625e054970cb",
+      "attachedAt": 1789198615024,
+      "requestAborted": false,
+      "rolledBack": false,
+      "openedAt": 1789198615026,
+      "backendPid": 702,
+      "queryStartedAt": 1789198615358
+    },
+    "activity": {
+      "state": "active",
+      "wait": "PgSleep"
+    },
+    "remaining": 0
+  },
+  "passed": true,
+  "cleanup": [
+    {
+      "token": "8614b935-c074-4e5b-982b-50f467531c11",
+      "deleted": 1,
+      "verified": true
+    },
+    {
+      "token": "61ae6880-a8ba-4bf6-b2c9-bb41f4e8db7a",
+      "deleted": 1,
+      "verified": true
+    },
+    {
+      "token": "7d4b7efc-f37e-4646-b4e1-625e054970cb",
+      "deleted": 1,
+      "verified": true
+    },
+    {
+      "token": "c202f8ff-5cc1-41f6-9f86-77ff06220595",
+      "deleted": 1,
+      "verified": true
+    }
+  ],
+  "mainRunFinishedAt": "2026-09-12T07:37:01.206Z",
+  "recoveryCompletedAt": "2026-09-12T07:38:12.194Z",
+  "temporaryWorker": {
+    "name": "webdyne-hyperdrive-probe-7b150aac",
+    "version": "f2aace24-1b36-4fbc-b02e-1bff0c122e73",
+    "deleted": true,
+    "deletionVerified": "Cloudflare API 10007: Worker does not exist"
+  }
+}

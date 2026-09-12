@@ -1,0 +1,3 @@
+# WebDyne::Cloudflare::Hyperdrive::Codec
+
+Internal protocol v1 value conversion shared by the public facade and a potential future DBI adapter. `parameters(@values)` encodes undef, booleans, scalar text and explicit Blob objects. `result($result_hr)` preserves ordered column metadata and decodes row arrays. Big integers, numeric values, JSON, arrays and date/time values remain text. SQL NULL becomes undef; JSON null remains the string `null`. Bytea returns bytes. Non-finite floats remain explicit strings. Hash/object parameters are rejected; JSON callers must encode their documents explicitly.
