@@ -417,8 +417,9 @@ Normally the generated Worker instantiates it through
 `register($perl)` for each persistent interpreter generation and
 `attachScope({ scope, bindings, request })` for each request.
 
-No binding is exposed unless its name appears in `d1Bindings`, `kvBindings`,
-or `r2Bindings`. The comma-separated `WEBDYNE_D1_BINDINGS`,
+No binding is exposed unless its name appears in the corresponding allowlist:
+`d1Bindings`, `kvBindings`, `r2Bindings`, `hyperdriveBindings`, or
+`secretsStoreBindings`. The comma-separated `WEBDYNE_D1_BINDINGS`,
 `WEBDYNE_KV_BINDINGS`, and `WEBDYNE_R2_BINDINGS` variables remain compatibility
 paths for custom Workers.
 
@@ -514,3 +515,21 @@ See the [MySQL example](examples/hyperdrive-mysql/README.md),
 [API and restrictions](lib/WebDyne/Cloudflare/Hyperdrive.pm.md#mysql-and-compatible-databases),
 and [qualification report](HYPERDRIVE-MYSQL.md). PostgreSQL's existing API and `$1`
 placeholders remain supported. MySQL and PostgreSQL SQL dialects are not translated.
+
+## Secrets Store
+
+`WebDyne::Cloudflare::SecretsStore` retrieves an account-level secret through
+an explicitly allowed Worker binding. `get()` takes no arguments and returns a
+Future resolving to the secret string. The adapter fetches lazily, adds no
+value cache, revokes request capabilities on cleanup and sanitizes errors.
+
+Configure extension option `secretsStoreBindings: ["API_KEY"]` and generator
+resource `webdyne.cloudflare.secretsStoreSecrets` entries containing `binding`,
+`storeId` and `secretName`. The generator emits Wrangler `secrets_store_secrets`.
+This needs the Secrets Store generator in ZeroPerl 1.0.12; older runtimes can
+use a user-owned Wrangler file. No Secrets Store compatibility flag is needed.
+The existing Hyperdrive provider supports Secrets Store alongside databases.
+
+See the [API sidecar](lib/WebDyne/Cloudflare/SecretsStore.pm.md) and
+[local example](examples/secrets-store/README.md). Ordinary Worker string
+secrets and store management operations are not part of this API.

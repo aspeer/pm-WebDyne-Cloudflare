@@ -22,6 +22,8 @@ WriteMakefile(
         'Test::More' => 0.88,
     },
     PM => {
+        'lib/WebDyne/Cloudflare/SecretsStore.pm' => '$(INST_LIB)/WebDyne/Cloudflare/SecretsStore.pm',
+        'lib/WebDyne/Cloudflare/SecretsStore/Error.pm' => '$(INST_LIB)/WebDyne/Cloudflare/SecretsStore/Error.pm',
         'lib/WebDyne/Cloudflare.pm'              => '$(INST_LIB)/WebDyne/Cloudflare.pm',
         'lib/WebDyne/Cloudflare/D1.pm'           => '$(INST_LIB)/WebDyne/Cloudflare/D1.pm',
         'lib/WebDyne/Cloudflare/D1/Blob.pm'      => '$(INST_LIB)/WebDyne/Cloudflare/D1/Blob.pm',

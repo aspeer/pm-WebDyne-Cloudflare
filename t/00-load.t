@@ -8,6 +8,8 @@ use_ok('WebDyne::Cloudflare::D1');
 use_ok('WebDyne::Cloudflare::D1::Statement');
 use_ok('WebDyne::Cloudflare::D1::Blob');
 use_ok('WebDyne::Cloudflare::D1::Error');
+use_ok('WebDyne::Cloudflare::SecretsStore');
+use_ok('WebDyne::Cloudflare::SecretsStore::Error');
 use_ok('WebDyne::Cloudflare::KV');
 use_ok('WebDyne::Cloudflare::KV::Blob');
 use_ok('WebDyne::Cloudflare::KV::Error');

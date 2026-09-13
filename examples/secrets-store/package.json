@@ -1,0 +1,24 @@
+{
+  "name": "webdyne-secrets-store-example",
+  "private": true,
+  "type": "module",
+  "scripts": { "check": "webdyne-cloudflare check", "dev": "webdyne-cloudflare dev" },
+  "dependencies": {
+    "@webdyne/webdyne-zeroperl": "^1.0.12",
+    "@webdyne/webdyne-cloudflare": "^1.5.0"
+  },
+  "webdyne": {
+    "entry": "app.pagi",
+    "static": false,
+    "extensions": {
+      "@webdyne/webdyne-cloudflare": { "secretsStoreBindings": ["API_KEY"] }
+    },
+    "cloudflare": {
+      "secretsStoreSecrets": [{
+        "binding": "API_KEY",
+        "storeId": "00000000000000000000000000000000",
+        "secretName": "webdyne-local-demo"
+      }]
+    }
+  }
+}

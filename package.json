@@ -1,6 +1,6 @@
 {
   "name": "@webdyne/webdyne-cloudflare",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Cloudflare service extensions for WebDyne running under WebAssembly",
   "type": "module",
   "files": [
@@ -17,7 +17,8 @@
     "./r2-host": "./js/r2-host.js",
     "./webdyne-extension.json": "./webdyne-extension.json",
     "./hyperdrive": "./js/hyperdrive.js",
-    "./hyperdrive-host": "./js/hyperdrive-host.js"
+    "./hyperdrive-host": "./js/hyperdrive-host.js",
+    "./secrets-store-host": "./js/secrets-store-host.js"
   },
   "scripts": {
     "test": "npm run test:perl && npm run test:js",
@@ -26,7 +27,8 @@
     "pack:check": "node t.js/check-package.mjs",
     "smoke:d1": "node t.js/smoke-d1.mjs",
     "smoke:kv": "node t.js/smoke-kv.mjs",
-    "smoke:r2": "node t.js/smoke-r2.mjs"
+    "smoke:r2": "node t.js/smoke-r2.mjs",
+    "smoke:secrets-store": "node t.js/smoke-secrets-store.mjs"
   },
   "sideEffects": false,
   "keywords": [

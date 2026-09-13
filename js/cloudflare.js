@@ -1,3 +1,4 @@
+import { SecretsStoreHostBridge, secretsStoreBindingNames } from "./secrets-store-host.js";
 import { D1HostBridge, d1BindingNames } from "./d1-host.js";
 import { KVHostBridge, kvBindingNames } from "./kv-host.js";
 import { R2HostBridge, r2BindingNames } from "./r2-host.js";
@@ -53,6 +54,8 @@ export function createWebDyneCloudflareExtension(options = {}) {
   const configuredKVBindings = configuredBindingNames(options, "kvBindings", kvBindingNames);
   const configuredR2Bindings = configuredBindingNames(options, "r2Bindings", r2BindingNames);
   const configuredHyperdriveBindings = configuredBindingNames(options, "hyperdriveBindings", hyperdriveBindingNames);
+  const configuredSecretsStoreBindings = configuredBindingNames(options, "secretsStoreBindings", secretsStoreBindingNames);
+  const secretsStore = new SecretsStoreHostBridge();
   const d1 = new D1HostBridge();
   const kv = new KVHostBridge({ maxValueBytes: options.kvMaxValueBytes });
   const r2 = new R2HostBridge({ maxObjectBytes: options.r2MaxObjectBytes });
@@ -62,6 +65,7 @@ export function createWebDyneCloudflareExtension(options = {}) {
     name: "@webdyne/webdyne-cloudflare",
 
     register(perl) {
+      secretsStore.register(perl);
       d1.register(perl);
       kv.register(perl);
       r2.register(perl);
@@ -71,6 +75,8 @@ export function createWebDyneCloudflareExtension(options = {}) {
     attachScope({ scope, bindings, request, lifecycle }) {
       const attachments = [];
       try {
+        attachments.push(secretsStore.attachScope(scope, bindings,
+          configuredSecretsStoreBindings ?? secretsStoreBindingNames(bindings?.WEBDYNE_SECRETS_STORE_BINDINGS)));
         attachments.push(d1.attachScope(
           scope,
           bindings,
@@ -122,3 +128,6 @@ export {
   R2_HOST_FUNCTION_NAME,
   r2BindingNames,
 } from "./r2-host.js";
+
+export { SecretsStoreHostBridge, secretsStoreBindingNames,
+  SECRETS_STORE_EXTENSION_NAME, SECRETS_STORE_HOST_FUNCTION_NAME } from "./secrets-store-host.js";

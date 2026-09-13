@@ -27,6 +27,10 @@ examples/hyperdrive/package.json
 examples/hyperdrive/schema.sql
 examples/package.json
 examples/schema.sql
+examples/secrets-store/README.md
+examples/secrets-store/app/app.pagi
+examples/secrets-store/app/app.pagi.md
+examples/secrets-store/package.json
 examples/wrangler.jsonc
 js/cloudflare.js
 js/d1-host.js
@@ -38,6 +42,7 @@ js/hyperdrive-postgres.js
 js/hyperdrive.js
 js/kv-host.js
 js/r2-host.js
+js/secrets-store-host.js
 js/storage-host.js
 lib/WebDyne/Cloudflare.pm
 lib/WebDyne/Cloudflare.pm.md
@@ -75,6 +80,10 @@ lib/WebDyne/Cloudflare/R2/Error.pm
 lib/WebDyne/Cloudflare/R2/Error.pm.md
 lib/WebDyne/Cloudflare/R2/Object.pm
 lib/WebDyne/Cloudflare/R2/Object.pm.md
+lib/WebDyne/Cloudflare/SecretsStore.pm
+lib/WebDyne/Cloudflare/SecretsStore.pm.md
+lib/WebDyne/Cloudflare/SecretsStore/Error.pm
+lib/WebDyne/Cloudflare/SecretsStore/Error.pm.md
 package-lock.json
 package.json
 prototypes/hyperdrive-api/README.md
@@ -129,10 +138,12 @@ t.js/prepare-storage-smoke.mjs
 t.js/r2-host.test.mjs
 t.js/regressions.test.mjs
 t.js/release-workflow.test.mjs
+t.js/secrets-store-host.test.mjs
 t.js/smoke-cleanup.test.mjs
 t.js/smoke-d1.mjs
 t.js/smoke-kv.mjs
 t.js/smoke-r2.mjs
+t.js/smoke-secrets-store.mjs
 t.js/smoke-support.mjs
 t/00-load.t
 t/01-d1.t
@@ -142,6 +153,7 @@ t/04-regressions.t
 t/05-d1-batch.t
 t/06-hyperdrive-transport.t
 t/07-hyperdrive-api.t
+t/08-secrets-store.t
 t/fixtures/app/d1-api.psp
 t/fixtures/app/d1-batch.psp
 t/fixtures/app/d1.psp

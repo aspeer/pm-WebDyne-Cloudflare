@@ -14,6 +14,9 @@ const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"
 const cache = await mkdtemp(join(tmpdir(), "webdyne-cloudflare-npm-cache-"));
 
 const expected = [
+  "js/secrets-store-host.js",
+  "lib/WebDyne/Cloudflare/SecretsStore.pm",
+  "lib/WebDyne/Cloudflare/SecretsStore/Error.pm",
   "LICENSE",
   "README.md",
   "TEST.md",

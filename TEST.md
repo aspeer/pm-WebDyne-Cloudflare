@@ -226,3 +226,33 @@ with its generated secret file. `smoke.mjs` runs CRUD, transaction/failure/limit
 checks and concurrent recovery; the wrapper independently checks committed data
 and drops each test table before returning. Delete the Worker and local secret
 file after qualification. See HYPERDRIVE-MYSQL.md for versions and evidence.
+
+## Secrets Store
+
+`npm test` includes the Perl SecretsStore API and JavaScript bridge contracts:
+text preservation, read-only allowlists, protocol validation, request cleanup,
+late-result rejection, request isolation and sanitized errors. The ZeroPerl
+repository also tests generated Secrets Store bindings and user-owned configs.
+
+For Worker/WASM qualification, copy `examples/secrets-store` to a temporary
+application, install the candidate extension and runtime packages, run
+`npm run check`, provision a local dummy secret as described in its README,
+and start `npm run dev -- -- --port 8793`. From this repository run:
+
+```sh
+npm run smoke:secrets-store -- http://127.0.0.1:8793/
+```
+
+This runs four requests through the Perl API and asserts an exact fixed response
+with `Cache-Control: no-store`. It never requests or prints the secret value.
+Follow with a Wrangler deploy dry run to verify the generated Worker bundle.
+A local pass exercises the local Secrets Store implementation; it does not
+qualify production permissions or account resources.
+
+Secrets Store qualification on 2026-09-13 used the staged ZeroPerl 1.0.11
+GitHub artifact from run 34684893846, with the changed configuration generator
+overlaid, and the extension 1.5.0 candidate tarball. Wrangler 4.127.1 generated
+and dry-ran the Worker successfully. Four concurrent local Worker/WASM requests
+passed with a locally provisioned dummy secret. No production secret or remote
+Cloudflare resource was used. Unit tests additionally cover string fidelity,
+provider failures and in-flight capability revocation.
