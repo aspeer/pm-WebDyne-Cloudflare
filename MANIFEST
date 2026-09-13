@@ -165,3 +165,10 @@ t/fixtures/wrangler.jsonc
 tools/create-release-manifest.mjs
 tools/stage-worker.pl
 webdyne-extension.json
+lib/WebDyne/Cloudflare/D1/Session.pm
+lib/WebDyne/Cloudflare/D1/Session.pm.md
+t/09-d1-session.t
+t.js/d1-session.test.mjs
+examples/d1-sessions/README.md
+examples/d1-sessions/package.json
+examples/d1-sessions/app/app.pagi

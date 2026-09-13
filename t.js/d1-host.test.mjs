@@ -51,6 +51,7 @@ test("attaches and releases an opaque request capability", async () => {
     version: 1,
     capability: "capability-token",
     bindings: ["DB"],
+    session_bindings: [],
   });
   assert.equal((await bridge.dispatch(request())).success, true);
   attachment.release();

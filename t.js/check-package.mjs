@@ -40,6 +40,7 @@ const expected = [
 
   "lib/WebDyne/Cloudflare.pm",
   "lib/WebDyne/Cloudflare/D1.pm",
+  "lib/WebDyne/Cloudflare/D1/Session.pm",
   "lib/WebDyne/Cloudflare/D1/Blob.pm",
   "lib/WebDyne/Cloudflare/D1/Error.pm",
   "lib/WebDyne/Cloudflare/D1/Statement.pm",

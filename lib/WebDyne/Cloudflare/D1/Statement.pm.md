@@ -14,3 +14,7 @@ execution. Every statement must originate from that exact database object.
 
 Statements retain their originating database capability and must not outlive
 its request. Failures use WebDyne::Cloudflare::D1::Error.
+
+Statements prepared by a [D1 session](Session.pm.md) retain that session through
+`bind()` and execution. Session batches require the exact same owning session
+object, just as ordinary batches require the same database object.

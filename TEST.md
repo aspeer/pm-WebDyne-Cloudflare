@@ -256,3 +256,28 @@ and dry-ran the Worker successfully. Four concurrent local Worker/WASM requests
 passed with a locally provisioned dummy secret. No production secret or remote
 Cloudflare resource was used. Unit tests additionally cover string fidelity,
 provider failures and in-flight capability revocation.
+
+## D1 sessions (1.6.0)
+
+`t/09-d1-session.t` covers Future-returning session creation, constraints,
+bookmarks, ownership, query shapes, old hosts and malformed responses.
+`t.js/d1-session.test.mjs` covers native session reuse, isolation across requests
+and bindings, expiry, provider failures, and local D1 prepared queries and atomic
+batch rollback. Local D1 uses the compatibility date supported by the pinned
+workerd binary. It cannot establish remote replica routing or replication lag.
+
+`examples/d1-sessions` is a read-only Worker/WASM bookmark example. For package
+qualification, copy it to a temporary directory, install the candidate extension
+archive and runtime package, run `npm run check`, then `npm run dev -- -- --port
+8794`. Request `/`, check `results[0].value` is 7, and send any returned
+`x-d1-bookmark` on a second request. Repeat concurrently to check request isolation.
+For remote qualification, use a replication-enabled test database and inspect
+`meta.served_by_primary` and `meta.served_by_region`; a request may legitimately
+be served by the primary. Test write/read continuity with a separate isolated
+fixture before relying on replica behavior in production.
+
+D1 session qualification on 2026-09-13 passed the packaged 1.6.0 extension with
+ZeroPerl 1.0.12: generated Worker build, Wrangler dry run, and ten local Perl/WASM
+HTTP requests including bookmark continuation and eight concurrent requests.
+No ZeroPerl source changes were needed. Remote replication and replica-lag
+behavior were not exercised; no Cloudflare database settings were changed.

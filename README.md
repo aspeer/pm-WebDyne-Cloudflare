@@ -533,3 +533,11 @@ The existing Hyperdrive provider supports Secrets Store alongside databases.
 See the [API sidecar](lib/WebDyne/Cloudflare/SecretsStore.pm.md) and
 [local example](examples/secrets-store/README.md). Ordinary Worker string
 secrets and store management operations are not part of this API.
+
+## D1 read replication
+
+D1 now supports opt-in `with_session()` and `get_bookmark()` through the
+[Sessions API](lib/WebDyne/Cloudflare/D1.pm.md#sessions-and-read-replication).
+Use a session for replica reads and carry its bookmark between related requests.
+Existing D1 calls retain primary-only routing. Enable replication separately
+in Cloudflare database settings.

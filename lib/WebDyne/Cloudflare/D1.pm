@@ -54,8 +54,23 @@ sub new {
     my $self=bless({
         binding    => $binding,
         capability => $extension_hr->{'capability'},
+        sessions   => (ref($extension_hr->{'session_bindings'}) eq 'ARRAY'
+            &&grep { defined($_)&&!ref($_)&&($_ eq $binding) } @{$extension_hr->{'session_bindings'}}) ? 1 : 0,
     }, $class);
     return $self;
+}
+
+
+async sub with_session {
+    my ($self, $constraint)=@_;
+    die "D1 Sessions API is unavailable for this binding\n" unless $self->{'sessions'};
+    die "Cannot create a session from a session\n" if exists($self->{'session'});
+    die "D1 session requires a non-empty constraint or bookmark\n"
+        unless ((@_<=2)&&((@_==1)||(defined($constraint)&&!ref($constraint)&&length($constraint))));
+    my $id=await $self->execute(operation => 'with_session',
+        constraint => (defined($constraint) ? $constraint : 'first-unconstrained'));
+    require WebDyne::Cloudflare::D1::Session;
+    return bless({%{$self}, session => $id}, 'WebDyne::Cloudflare::D1::Session');
 }
 
 
@@ -160,6 +175,14 @@ sub decode_row {
 sub decode_result {
     my ($request_hr, $result_ref)=@_;
 
+    if ($request_hr->{'operation'} eq 'with_session' || $request_hr->{'operation'} eq 'get_bookmark') {
+        die WebDyne::Cloudflare::D1::Error->new(
+            name => 'D1_PROTOCOL_ERROR', message => 'host returned an invalid session value',
+        ) unless ((!defined($result_ref)&&($request_hr->{'operation'} eq 'get_bookmark'))
+            ||(defined($result_ref)&&!ref($result_ref)&&length($result_ref)));
+        return $result_ref;
+    }
+
     if ($request_hr->{'operation'} eq 'batch') {
         die WebDyne::Cloudflare::D1::Error->new(
             name    => 'D1_PROTOCOL_ERROR',
@@ -209,6 +232,7 @@ async sub execute {
         binding    => $self->{'binding'},
         %request,
     };
+    $wire_hr->{'session'}=$self->{'session'} if exists($self->{'session'});
     if ($request{'operation'} eq 'batch') {
         $wire_hr->{'statements'}=[map {
             {sql => $_->{'sql'}, params => [map { encode_parameter($_) } @{$_->{'params'}}]}

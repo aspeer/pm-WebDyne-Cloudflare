@@ -148,11 +148,12 @@ export class D1HostBridge {
     if (typeof capability !== "string" || capability.length < 8 || this.#capabilities.has(capability)) {
       throw new Error("D1 capability token factory returned an invalid or duplicate token");
     }
-    this.#capabilities.set(capability, bindings);
+    this.#capabilities.set(capability, { bindings, sessions: new Map() });
     scope.extensions[EXTENSION_NAME] = {
       version: PROTOCOL_VERSION,
       capability,
       bindings: [...bindings.keys()],
+      session_bindings: [...bindings].filter(([, database]) => typeof database.withSession === "function").map(([name]) => name),
     };
     let released = false;
     return {
@@ -187,10 +188,31 @@ export class D1HostBridge {
       throw new TypeError("D1 host request must be an object");
     }
     if (request.version !== PROTOCOL_VERSION) throw new Error("Unsupported D1 host protocol");
-    const bindings = this.#capabilities.get(request.capability);
-    if (!bindings) throw new Error("D1 capability is invalid or has expired");
-    const database = bindings.get(assertBindingName(request.binding));
+    const state = this.#capabilities.get(request.capability);
+    if (!state) throw new Error("D1 capability is invalid or has expired");
+    let database = state.bindings.get(assertBindingName(request.binding));
     if (!database) throw new Error(`D1 binding ${request.binding} is not allowed by this capability`);
+    if (request.operation === "with_session") {
+      if (request.session !== undefined) throw new TypeError("Cannot create a session from a session");
+      if (typeof database.withSession !== "function") throw new Error("D1 Sessions API is unavailable for this binding");
+      if (request.constraint !== undefined && (typeof request.constraint !== "string" || request.constraint.length === 0)) {
+        throw new TypeError("D1 session requires a non-empty constraint or bookmark");
+      }
+      const session = database.withSession(request.constraint ?? "first-unconstrained");
+      if (!isD1Database(session) || typeof session.getBookmark !== "function") throw new Error("Invalid D1 session provider");
+      const id = crypto.randomUUID();
+      state.sessions.set(id, { binding: request.binding, database: session });
+      return id;
+    }
+    if (request.session !== undefined) {
+      const session = state.sessions.get(request.session);
+      if (!session || session.binding !== request.binding) throw new Error("D1 session is invalid or belongs to another binding or request");
+      database = session.database;
+    }
+    if (request.operation === "get_bookmark") {
+      if (request.session === undefined) throw new Error("D1 bookmark requires a session");
+      return database.getBookmark();
+    }
     if (request.operation === "batch") {
       if (!Array.isArray(request.statements) || request.statements.length === 0) {
         throw new TypeError("D1 batch requires a non-empty array of statements");

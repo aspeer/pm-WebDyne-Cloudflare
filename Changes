@@ -1,3 +1,8 @@
+1.6.0  2026-09-13
+    Add opt-in D1 sessions, constraints and cross-request bookmarks.
+    Preserve statement/batch ownership, request isolation and ordinary primary queries.
+    Qualify session contracts and atomic rollback against local D1.
+
 1.4.0  2026-09-13
     Select PostgreSQL or MySQL from each Hyperdrive binding without changing Perl construction.
     Add pinned mysql2, exact result types, SQL-mode-independent parameters and DML metadata.
