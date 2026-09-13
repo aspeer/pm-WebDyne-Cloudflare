@@ -53,7 +53,7 @@ rollback. Use idempotency keys for operations the application may retry.
 ```json
 {
   "webdyne": {
-    "entry": "app.pagi",
+    "entry": "app.psp",
     "perlLibrary": ["lib"],
     "extensions": {"@webdyne/webdyne-cloudflare": {}},
     "cloudflare": {

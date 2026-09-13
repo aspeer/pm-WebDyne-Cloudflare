@@ -20,7 +20,7 @@ sub main {
 
     #  Stage user examples only; smoke fixtures have an independent harness.
     #
-    my $source_dn=File::Spec->catdir($FindBin::Bin, '..', 'examples');
+    my $source_dn=File::Spec->catdir($FindBin::Bin, '..', 'examples', 'storage');
     make_path(File::Spec->catdir($destination_dn, 'app'));
     foreach my $relative_fn (qw(package.json schema.sql app/d1.psp app/d1-api.psp app/kv.psp app/r2.psp)) {
         my $source_fn=File::Spec->catfile($source_dn, split(m{/}, $relative_fn));

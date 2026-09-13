@@ -1,13 +1,14 @@
 {
   "name": "@webdyne/webdyne-cloudflare",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Cloudflare service extensions for WebDyne running under WebAssembly",
   "type": "module",
   "files": [
     "TEST.md",
     "js",
     "lib",
-    "webdyne-extension.json"
+    "webdyne-extension.json",
+    "docs"
   ],
   "exports": {
     ".": "./js/cloudflare.js",

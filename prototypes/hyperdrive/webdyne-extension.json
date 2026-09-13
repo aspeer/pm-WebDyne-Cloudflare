@@ -1,7 +1,0 @@
-{
-  "schemaVersion": 1,
-  "perlLibrary": "lib",
-  "providers": {
-    "cloudflare": { "module": "./cloudflare", "factory": "createHyperdrivePrototype" }
-  }
-}

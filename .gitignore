@@ -9,5 +9,11 @@
 /dist/
 .wrangler/
 /.dev.vars
-/examples/worker/.wrangler/
-/examples/.wrangler/
+
+# Generated consumers and local secrets, at any depth.
+.webdyne/
+node_modules/
+.dev.vars*
+.env
+.env.*
+.deployment-secrets.json

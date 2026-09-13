@@ -10,9 +10,10 @@ use Future::AsyncAwait;
 
 async sub initialize {
     my ($context_or)=@_;
-    await $context_or->storage()->do(
-        'CREATE TABLE IF NOT EXISTS counter(id INTEGER PRIMARY KEY, value INTEGER)', undef,
-    );
+    await $context_or->storage()->batch([
+        ['CREATE TABLE IF NOT EXISTS counter(id INTEGER PRIMARY KEY, value INTEGER)', undef],
+        ['INSERT OR IGNORE INTO counter VALUES (1, 0)', undef],
+    ]);
     return;
 }
 

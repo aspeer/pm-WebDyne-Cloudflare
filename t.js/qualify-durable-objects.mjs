@@ -18,7 +18,7 @@ let base;
 let log='';
 async function start(){
   log='';
-  server=spawn(process.execPath,[join(root,'node_modules/wrangler/bin/wrangler.js'),'dev','--config','wrangler.jsonc','--port','0'],{cwd:directory,env:{...process.env,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});
+  server=spawn(process.execPath,[join(root,'node_modules/wrangler/bin/wrangler.js'),'dev','--config','wrangler.jsonc','--port','0','--inspector-port','0'],{cwd:directory,env:{...process.env,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});
   for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{log+=chunk;});
   for(let attempt=0;attempt<300;attempt++){
     const match=log.match(/Ready on (http:\/\/[^\s\x1b]+)/);
@@ -30,13 +30,15 @@ async function start(){
 }
 async function call(name,method,args=[]){const response=await fetch(`${base}/call`,{method:'POST',body:JSON.stringify({name,method,args}),signal:AbortSignal.timeout(30000)});assert.equal(response.status,200,await response.clone().text());return response.json();}
 try{
-  await cp(join(root,'examples/durable-objects/app'),join(directory,'app'),{recursive:true});
+  await mkdir(join(directory,'app'));
+  await cp(join(root,'t/fixtures/durable-object/app.pagi'),join(directory,'app/app.pagi'));
   await mkdir(join(directory,'lib/Example'),{recursive:true});
   await cp(join(root,'t/fixtures/durable-object/Probe.pm'),join(directory,'lib/Example/Probe.pm'));
   await cp(join(root,'t/fixtures/durable-object/worker.js'),join(directory,'worker.js'));
   const [packed]=JSON.parse(execFileSync('npm',['pack','--json','--ignore-scripts','--pack-destination',directory,'--cache',cache],{cwd:root,encoding:'utf8'}));
   const pkg=JSON.parse(await readFile(join(root,'examples/durable-objects/package.json')));
   pkg.dependencies={'@webdyne/webdyne-zeroperl-5.44.0':resolve(runtime),'@webdyne/webdyne-cloudflare':join(directory,packed.filename)};
+  pkg.webdyne.entry='app.pagi';
   const definition=pkg.webdyne.cloudflare.durableObjects[0];
   definition.perlPackage='Example::Probe';definition.methods=['increment','read','echo','rollback','remember','stale','cycle','delay','failure'];
   await writeFile(join(directory,'package.json'),JSON.stringify(pkg));

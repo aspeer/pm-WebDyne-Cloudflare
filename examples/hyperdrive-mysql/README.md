@@ -1,31 +1,24 @@
-# MySQL Hyperdrive inventory example
+# MySQL Hyperdrive inventory
 
-Copy this directory outside the source checkout, replace the Hyperdrive ID in
-package.json with your MySQL configuration, and apply schema.sql to that database.
-Install dependencies and run `npm run check`. The generated endpoint returns a
-bounded, read-only inventory. Version 1.4.0 of the extension and the 1.0.11 runtime
-must be approved for npm publication, or install the equivalent local archives.
+The default `app/app.psp` renders an HTML inventory table with WebDyne.
+The alternate `app/app.pagi` returns the same bounded rows as JSON.
+Both bind the row limit using `?` and escape or serialize returned data.
 
-Driver selection follows the binding's `mysql:` scheme. For local development,
-set `WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB` privately and run `npm run dev`.
-Never commit credentials. Use the runtime's `webdyne-cloudflare deploy` command
-for your own deployment.
+Follow the [installation guide](../README.md#install-and-run). Replace the
+Hyperdrive ID in package.json with your configuration and apply `schema.sql`
+to a disposable MySQL database. For local development, set
+`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB` privately before running:
 
-For atomic booking in an authenticated application, use an InnoDB transaction:
-
-```perl
-await $db_or->transaction(async sub {
-    my ($tx_or)=@_;
-    my $count=await $tx_or->do(
-        'UPDATE demo_inventory SET quantity=quantity-? WHERE sku=? AND quantity>=?',
-        undef, $places, $sku, $places);
-    die "insufficient places\n" unless $count==1;
-    return await $tx_or->selectrow_arrayref(
-        'SELECT quantity FROM demo_inventory WHERE sku=?', undef, $sku);
-});
+```sh
+npm run check
+npm run dev
 ```
 
-Validate that `$places` is a positive integer in application code. The conditional
-UPDATE prevents overbooking; use the callback handle for all transaction work.
-MySQL has no PostgreSQL RETURNING equivalent for this statement. For generated
-INSERT keys, execute a prepared statement and read its `insert_id()` string.
+Open `/` to see the seeded inventory. The query is read-only and limited to
+100 rows. Local connection strings bypass Hyperdrive pooling/caching; use a
+cache-disabled Hyperdrive binding for remote read-after-write checks.
+Credentials never belong in package.json or source control.
+
+See [native PAGI switching](../README.md#native-pagi-alternatives) and the
+[Hyperdrive API](../../lib/WebDyne/Cloudflare/Hyperdrive.pm.md) for statements,
+transactions, exact types, deadlines, cleanup and dialect restrictions.

@@ -1,7 +1,24 @@
+Revision history for WebDyne-Cloudflare
+
+1.7.1  2026-09-13
+    Organize service examples with WebDyne pages first and native PAGI supplements.
+    Consolidate configuration, release guidance and dated qualification evidence.
+    Preserve reusable authenticated database harnesses under t/integration.
+    Remove superseded prototypes, phase reports and transient result snapshots.
+
+1.7.0  2026-09-13
+    Add request-scoped Durable Object RPC and Perl-defined SQLite-backed objects.
+    Serialize finite invocations and support atomic SQL batches and explicit methods.
+    Qualify concurrency, isolation, rollback, capability expiry and restart persistence.
+
 1.6.0  2026-09-13
     Add opt-in D1 sessions, constraints and cross-request bookmarks.
     Preserve statement/batch ownership, request isolation and ordinary primary queries.
     Qualify session contracts and atomic rollback against local D1.
+
+1.5.0  2026-09-13
+    Add request-scoped Secrets Store retrieval with sanitized errors and no value cache.
+    Qualify local dummy-secret retrieval through the generated Perl/WASM Worker.
 
 1.4.0  2026-09-13
     Select PostgreSQL or MySQL from each Hyperdrive binding without changing Perl construction.
@@ -27,8 +44,6 @@
     Validate byte wrappers and malformed capabilities/responses explicitly.
     Retry failed host registration; enforce KV read limits; cancel oversized R2 reads.
     Surface smoke cleanup failures; avoid modifying sibling Worker checkouts.
-
-Revision history for WebDyne-Cloudflare
 
 1.1.0  2026-09-03
     - Add modular Future-returning Workers KV and buffered R2 Perl facades.

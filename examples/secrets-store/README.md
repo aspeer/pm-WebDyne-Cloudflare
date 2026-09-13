@@ -1,6 +1,6 @@
 # Secrets Store example
 
-Install the extension and runtime releases (or their local development tarballs),
+Follow the [installation guide](../README.md#install-and-run),
 then run `npm run check` to generate `.webdyne/wrangler.jsonc`.
 The all-zero store ID is a local placeholder, not a production resource.
 
@@ -12,7 +12,9 @@ npm run dev
 ```
 
 Enter a dummy value at the prompt. Do not add `--remote` for this local example.
-The endpoint awaits retrieval and returns only `Secret retrieval succeeded`.
+The default WebDyne page retrieves the value and renders `Secret retrieval succeeded`.
+The [native PAGI alternative](../README.md#native-pagi-alternatives) returns the
+same confirmation as plain text. Both set `Cache-Control: no-store`.
 It does not return the value or its length. Local persistence stays under
 Wrangler's ignored `.wrangler` directory.
 

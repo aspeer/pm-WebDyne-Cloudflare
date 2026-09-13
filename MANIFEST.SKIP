@@ -9,5 +9,8 @@
 ^pm_to_blib$
 ^WebDyne-Cloudflare-.*\.tar\.gz$
 ^WebDyne-Cloudflare-[^/]+/
-^examples/worker/\.wrangler/
-^examples/\.wrangler/
+(?:^|/)\.webdyne/
+(?:^|/)node_modules/
+(?:^|/)\.dev\.vars(?:\..*)?$
+(?:^|/)\.env(?:\..*)?$
+(?:^|/)\.deployment-secrets\.json$

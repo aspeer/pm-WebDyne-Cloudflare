@@ -3,21 +3,31 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "webdyne-cloudflare build",
     "check": "webdyne-cloudflare check",
     "dev": "webdyne-cloudflare dev"
   },
   "dependencies": {
-    "@webdyne/webdyne-zeroperl": "^1.0.11",
-    "@webdyne/webdyne-cloudflare": "^1.4.0"
+    "@webdyne/webdyne-zeroperl": "^1.0.14",
+    "@webdyne/webdyne-cloudflare": "^1.7.1"
   },
   "webdyne": {
-    "entry": "app.pagi",
+    "entry": "app.psp",
     "static": false,
     "extensions": {
-      "@webdyne/webdyne-cloudflare": { "hyperdriveBindings": ["DB"] }
+      "@webdyne/webdyne-cloudflare": {
+        "hyperdriveBindings": [
+          "DB"
+        ]
+      }
     },
     "cloudflare": {
-      "hyperdrive": [{ "binding": "DB", "id": "REPLACE_WITH_YOUR_32_HEX_HYPERDRIVE_ID" }]
+      "hyperdrive": [
+        {
+          "binding": "DB",
+          "id": "REPLACE_WITH_YOUR_32_HEX_HYPERDRIVE_ID"
+        }
+      ]
     }
   }
 }

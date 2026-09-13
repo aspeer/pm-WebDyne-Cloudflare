@@ -1,6 +1,7 @@
-# Secrets Store retrieval example
+# Native PAGI Secrets Store supplement
 
-An asynchronous PAGI application reading `API_KEY` through
-`WebDyne::Cloudflare::SecretsStore`. Successful retrieval returns a fixed text
-response with `Cache-Control: no-store`; the value is never returned or logged.
-Use the parent directory's README for configuration and local provisioning.
+`app.psp` is the default WebDyne example. Select this file as `webdyne.entry`
+using the [example instructions](../../README.md#native-pagi-alternatives) to
+exercise an explicit PAGI text response. The request retrieves `API_KEY`, sends
+`Cache-Control: no-store`, and returns only `Secret retrieval succeeded`.
+The value and its length are never included in the response.
