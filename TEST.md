@@ -205,3 +205,24 @@ exact rebuilt ZeroPerl 1.0.11 CI archive, finishing at 09:22:23 UTC. Archive int
 clean source identity and the packaged WASM SHA-256 were verified. Results are in
 prototypes/hyperdrive-qualification/results/release.json. The temporary Worker and
 local bearer secret were removed after all scoped cleanup checks passed.
+
+## Hyperdrive MySQL (1.4.0)
+
+The full default suite now passes 293 Perl assertions and 60 JavaScript tests.
+`t.js/hyperdrive-mysql.test.mjs` covers driver selection, mixed bindings, lexical
+placeholder handling, values/metadata, error redaction, transaction rules,
+streaming overflow and awaited socket closure. Perl tests cover the new metadata
+and error accessors while retaining PostgreSQL checks.
+
+`t.js/integration-mysql.mjs` is an explicit opt-in for disposable local servers.
+Set `WEBDYNE_MYSQL_TEST_URL` privately and run it with Node. It creates/drops a
+unique table and temporarily changes/restores the server's global SQL mode, so
+use an isolated MySQL/MariaDB container with an administrative test account.
+
+`prototypes/hyperdrive-mysql/stage.mjs` builds an authenticated generated-app
+fixture from runtime/extension archives. Run the generated build/check scripts,
+then use a root Wrangler config targeting the fixture's authentication wrapper,
+with its generated secret file. `smoke.mjs` runs CRUD, transaction/failure/limit
+checks and concurrent recovery; the wrapper independently checks committed data
+and drops each test table before returning. Delete the Worker and local secret
+file after qualification. See HYPERDRIVE-MYSQL.md for versions and evidence.

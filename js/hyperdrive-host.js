@@ -1,4 +1,5 @@
-import { decodeParameter, encodeResult, protocolError } from "./hyperdrive-codec.js";
+import { protocolError } from "./hyperdrive-codec.js";
+import { postgresProtocol } from "./hyperdrive-postgres.js";
 
 export const HYPERDRIVE_EXTENSION_NAME = "webdyne.cloudflare.hyperdrive";
 export const HYPERDRIVE_HOST_FUNCTION_NAME = "WebDyne::Cloudflare::Hyperdrive::Transport::host_call";
@@ -38,29 +39,6 @@ function firstKeyword(sql) {
   return /^[a-z]+/i.exec(sql.slice(offset))?.[0].toUpperCase();
 }
 
-function databaseError(error) {
-  // System codes such as EPIPE also have five uppercase characters. They are
-  // not SQLSTATEs and their messages can contain connection details.
-  return !error.local && typeof error.code === "string" && /^[0-9A-Z]{5}$/.test(error.code)
-    && /^(?:[0-9]{2}|0[A-Z]|P0|F0|HV|XX)/.test(error.code);
-}
-
-function publicError(error) {
-  if (!error || typeof error !== "object") error = {};
-  const database = databaseError(error);
-  const result = {
-    name: database ? "DATABASE_ERROR" : "HYPERDRIVE_ERROR",
-    code: database || error.local ? error.code : "CONNECTION_ERROR",
-    // Connection errors can contain connection strings; never expose their text.
-    message: database || error.local ? error.message : "PostgreSQL connection failed",
-  };
-  if (database) for (const key of ["severity", "detail", "hint", "position", "schema", "table", "column", "constraint"]) {
-    if (typeof error[key] === "string") result[key] = error[key];
-  }
-  if (error.outcomeUnknown) result.outcomeUnknown = true;
-  return result;
-}
-
 function bounded(promise, milliseconds, timeout) {
   let timer;
   const deadline = new Promise((_, reject) => {
@@ -74,9 +52,10 @@ function bounded(promise, milliseconds, timeout) {
 }
 
 export class HyperdriveHostBridge {
-  constructor({ clientFactory, ...limits } = {}) {
+  constructor({ clientFactory, protocolFactory = () => postgresProtocol, ...limits } = {}) {
     if (clientFactory !== undefined && typeof clientFactory !== "function") throw new TypeError("Invalid Hyperdrive client factory");
     this.clientFactory = clientFactory;
+    this.protocolFactory = protocolFactory;
     this.limits = { ...HYPERDRIVE_DEFAULT_LIMITS, ...limits };
     for (const [key, value] of Object.entries(this.limits)) {
       if (!(key in HYPERDRIVE_DEFAULT_LIMITS) || !Number.isSafeInteger(value) || value < 1 || value > 2147483647) {
@@ -103,7 +82,8 @@ export class HyperdriveHostBridge {
     const allowed = new Map();
     for (const name of names) {
       if (typeof bindings?.[name]?.connectionString !== "string" || !bindings[name].connectionString) throw new Error(`Missing Hyperdrive binding ${name}`);
-      allowed.set(name, bindings[name].connectionString);
+      allowed.set(name, { connectionString: bindings[name].connectionString,
+        protocol: this.protocolFactory(bindings[name].connectionString) });
     }
     const capability = crypto.randomUUID();
     const state = { allowed, connections: new Map(), released: false };
@@ -177,6 +157,7 @@ export class HyperdriveHostBridge {
   }
 
   async call(input) {
+    let protocol = postgresProtocol;
     try {
       if (typeof input !== "string" || new TextEncoder().encode(input).length > this.limits.maxRequestBytes) throw protocolError("Request limit exceeded", "REQUEST_LIMIT");
       let wire;
@@ -185,6 +166,7 @@ export class HyperdriveHostBridge {
       const state = this.capabilities.get(wire.capability);
       if (!state || state.released) throw protocolError("Expired request capability", "CAPABILITY_EXPIRED");
       if (!state.allowed.has(wire.binding)) throw protocolError("Binding not allowed", "BINDING_DENIED");
+      protocol = state.allowed.get(wire.binding).protocol;
       const operations = ["open", "query", "begin", "commit", "rollback", "disconnect"];
       if (!operations.includes(wire.operation)) throw protocolError("Invalid operation");
       const keys = ["version", "capability", "binding", "operation", "connection", "owner"];
@@ -203,12 +185,12 @@ export class HyperdriveHostBridge {
       let values;
       if (wire.operation === "query") {
         if (typeof wire.sql !== "string" || !wire.sql.trim() || wire.sql.includes("\0") || !Array.isArray(wire.params)) throw protocolError("Invalid query");
-        const keyword = firstKeyword(wire.sql);
+        const keyword = protocol.validateQuery ? "DRIVER_VALIDATED" : firstKeyword(wire.sql);
         if (!keyword) throw protocolError("Query must start with a SQL keyword after comments");
         if (["BEGIN", "START", "COMMIT", "END", "ROLLBACK", "ABORT", "SAVEPOINT", "RELEASE", "PREPARE", "EXECUTE", "DEALLOCATE", "DISCARD", "SET", "RESET"].includes(keyword)) {
           throw protocolError("Use transaction operations; session control SQL is unsupported", "TRANSACTION_CONTROL");
         }
-        values = wire.params.map(decodeParameter);
+        values = wire.params.map(protocol.decodeParameter);
       }
       if (wire.operation === "begin" && typeof wire.managed !== "boolean") throw protocolError("begin requires a managed boolean");
       if (wire.owner !== undefined && (typeof wire.owner !== "string" || !wire.owner)) throw protocolError("Invalid transaction owner");
@@ -226,10 +208,11 @@ export class HyperdriveHostBridge {
         if (wire.operation === "begin" && connection.transaction) throw protocolError("Nested transactions are unsupported", "TRANSACTION_ACTIVE");
         if (["commit", "rollback"].includes(wire.operation) && !connection.transaction) throw protocolError("No active transaction", "NO_TRANSACTION");
         if (connection.failed && wire.operation !== "rollback") throw protocolError("Transaction requires rollback", "TRANSACTION_FAILED");
+        if (wire.operation === "query") protocol.validateQuery?.(wire.sql, values, connection.transaction);
         let received = false;
         try {
           if (!connection.client) {
-            connection.client = this.clientFactory({ connectionString: state.allowed.get(wire.binding), limits: this.limits,
+            connection.client = this.clientFactory({ connectionString: state.allowed.get(wire.binding).connectionString, limits: this.limits,
               onError: error => { this.destroy(connection, error); } });
             await bounded(connection.client.connect(), this.limits.connectTimeoutMs, error => this.destroy(connection, error));
             connection.connected = true;
@@ -245,12 +228,12 @@ export class HyperdriveHostBridge {
             connection.failed = false;
             connection.owner = undefined;
           }
-          const encoded = encodeResult(result, this.limits);
+          const encoded = protocol.encodeResult(result, this.limits);
           return { ...encoded, connection: wire.connection, ...(connection.owner ? { owner: connection.owner } : {}) };
         } catch (error) {
           if (!error || typeof error !== "object") error = new Error("Driver failed");
           if (connection.transaction) connection.failed = true;
-          if (!connection.connected || !databaseError(error) || /^(08|57P0)/.test(error.code ?? "")
+          if (!connection.connected || !protocol.databaseError(error) || /^(08|57P0)/.test(error.code ?? "")
             || ["FATAL", "PANIC"].includes(error.severity)) this.destroy(connection, error);
           if (wire.operation === "commit" && !received && (connection.broken || /^(08|57P0)/.test(error.code ?? ""))) error.outcomeUnknown = true;
           throw error;
@@ -259,7 +242,7 @@ export class HyperdriveHostBridge {
       connection.pending = pending.catch(() => undefined);
       return JSON.stringify({ version: 1, ok: true, result: await pending });
     } catch (error) {
-      return JSON.stringify({ version: 1, ok: false, error: publicError(error) });
+      return JSON.stringify({ version: 1, ok: false, error: protocol.publicError(error) });
     }
   }
 }

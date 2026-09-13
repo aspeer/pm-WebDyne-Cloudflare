@@ -1,6 +1,6 @@
 # WebDyne::Cloudflare::Hyperdrive
 
-Asynchronous PostgreSQL queries through a request's Cloudflare Hyperdrive binding.
+Asynchronous PostgreSQL and MySQL queries through a request's Cloudflare Hyperdrive binding.
 This API borrows DBI conventions; it is not a DBI driver and does not require DBI,
 Moose or an ORM. It requires the Hyperdrive-enabled JavaScript extension and a
 ZeroPerl runtime with awaited cleanup support.
@@ -42,9 +42,9 @@ select method for INSERT/UPDATE/DELETE RETURNING when the returned rows are need
 
 Use undef or an empty hash for absent attributes. Slice is accepted only by
 selectall_arrayref; unknown attributes are errors. The attribute position is never
-treated as a bind value. Use PostgreSQL `$1`, `$2` placeholders and bind values
-separately. No question-mark rewriting, interpolation, SQL splitting, or automatic
-LIMIT is performed. Values cannot stand in for identifiers. Multiple SQL statements
+treated as a bind value. Use PostgreSQL `$1`, `$2` placeholders or MySQL `?`
+placeholders and bind values separately. SQL dialects are not translated and no
+automatic LIMIT is added. Values cannot stand in for identifiers. Multiple SQL statements
 and direct transaction/session-control commands are unsupported.
 
 `prepare($sql, $attr_hr)` constructs a local
@@ -87,12 +87,12 @@ also owns rollback/close. Never rely on a Perl destructor for asynchronous clean
 
 Cancelling an operation's Future invalidates the database handle. Disconnect it;
 otherwise bounded request teardown performs cleanup. Cancellation is not proof
-that PostgreSQL stopped executing or that a write did not happen. Failed managed
+that the database stopped executing or that a write did not happen. Failed managed
 cleanup or an ambiguous commit similarly requires disconnecting the handle.
 
 ## Values, errors and limits
 
-SQL NULL becomes undef; booleans become JSON::PP booleans. Small integers and
+With PostgreSQL, SQL NULL becomes undef; booleans become JSON::PP booleans. Small integers and
 finite floats become numbers. BIGINT and NUMERIC remain exact text, dates/times
 retain PostgreSQL text and microseconds, bytea becomes bytes, JSON/JSONB remains
 JSON text, and arrays/other types remain PostgreSQL text. JSON `null` therefore
@@ -116,3 +116,56 @@ origin database. The origin may continue running the statement while Hyperdrive
 settles its pooled connection. Subsequent work can wait for that pool and hit its
 own deadline. Do not immediately retry writes after a timeout: their outcome can
 be unknown. Configure database-side statement limits separately when required.
+
+## MySQL and compatible databases
+
+The JavaScript entry point selects PostgreSQL (`postgres:` or `postgresql:`) or
+MySQL (`mysql:`) from each Hyperdrive binding's connection string. Keep the same
+Perl constructor and `hyperdriveBindings` configuration. No `driver` argument or
+new ZeroPerl runtime is required; PostgreSQL and MySQL bindings can coexist.
+Credentials stay in JavaScript. The tested MySQL driver is pinned mysql2 3.24.4.
+
+```perl
+my $statement_or=$db_or->prepare('INSERT INTO customers (name) VALUES (?)');
+await $statement_or->execute($name);
+my $id=$statement_or->insert_id();  # Exact decimal string, including large IDs.
+my $customer_hr=await $db_or->selectrow_hashref(
+    'SELECT id, name FROM customers WHERE id=?', undef, $id);
+```
+
+MySQL executes a single text-protocol query. `prepare()` remains local; it does
+not use server-side prepared statements. The adapter substitutes only unquoted
+`?` placeholders outside comments, using UTF-8 hex expressions for text and hex
+literals for blobs. This avoids dependence on backslash escaping or SQL mode.
+It rejects mismatched parameter counts, `??` identifier placeholders, executable
+MySQL/MariaDB comments and quoted SQL literals containing backslashes. Bind those
+strings instead. LIMIT/OFFSET placeholders accept validated unsigned decimal
+integers (including zero). Ordinary quoted strings and comments may contain literal `?`.
+
+Supported statement families are SELECT, INSERT, UPDATE, DELETE, REPLACE, WITH,
+EXPLAIN, SHOW, DESCRIBE/DESC and ordinary CREATE/ALTER/DROP/TRUNCATE/RENAME/
+ANALYZE/OPTIMIZE/CHECK statements. The latter group is rejected inside transactions
+because MySQL can commit implicitly. USE, SET, locks, XA, CALL, LOAD DATA, SQL
+PREPARE/EXECUTE, multiple statements and multiple result sets are unsupported.
+Use transactional tables (InnoDB) for rollback guarantees; table engines, triggers,
+and server/provider restrictions remain the application's responsibility.
+
+MySQL BIGINT and DECIMAL values, JSON documents and dates/times remain strings;
+DATETIME(6) retains microseconds. Small integers and finite floating values become
+numbers. TINYINT(1)/BOOLEAN is numeric 0/1, not a PostgreSQL boolean. Binary fields
+return bytes. SQL NULL remains undef and JSON null remains text `null`. MySQL
+column metadata uses `driver => 'mysql'`, `type`, `flags` and `charset`; it does
+not invent PostgreSQL OIDs. Array rows retain duplicate columns.
+
+`rows()` and `execute()` use mysql2's affectedRows for DML. With the default
+FOUND_ROWS flag an UPDATE counts matched rows, including unchanged values.
+MySQL statement accessors `insert_id()`, `affected_rows()` and `warning_count()`
+expose DML metadata; SELECT and PostgreSQL results return undef for these fields.
+MySQL `code()` is symbolic (for example ER_DUP_ENTRY), while `sqlstate()` and
+`errno()` expose the server's SQLSTATE and numeric error. As with PostgreSQL,
+a SQL error inside a transaction requires rollback before further work.
+
+Qualified with Aiven MySQL 8.4.8 through Hyperdrive and Perl/WASM, plus direct
+adapter tests against MySQL 8.4.11 and MariaDB 11.8.9. PlanetScale/Vitess has not
+been qualified here; compatible protocol support does not establish identical
+SQL, DDL, or transaction behavior for every provider.

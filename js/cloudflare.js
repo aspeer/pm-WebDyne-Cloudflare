@@ -56,7 +56,7 @@ export function createWebDyneCloudflareExtension(options = {}) {
   const d1 = new D1HostBridge();
   const kv = new KVHostBridge({ maxValueBytes: options.kvMaxValueBytes });
   const r2 = new R2HostBridge({ maxObjectBytes: options.r2MaxObjectBytes });
-  const hyperdrive = new HyperdriveHostBridge({ ...options.hyperdriveLimits, clientFactory: options.hyperdriveClientFactory });
+  const hyperdrive = new HyperdriveHostBridge({ ...options.hyperdriveLimits, clientFactory: options.hyperdriveClientFactory, protocolFactory: options.hyperdriveProtocolFactory });
 
   return {
     name: "@webdyne/webdyne-cloudflare",

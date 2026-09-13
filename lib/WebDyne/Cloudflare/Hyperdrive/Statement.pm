@@ -159,6 +159,30 @@ sub command {
 }
 
 
+sub insert_id {
+    my ($self)=@_;
+    die "Hyperdrive insert_id takes no arguments\n" unless @_==1;
+    $self->available();
+    return $self->{'result'} ? $self->{'result'}{'insert_id'} : undef;
+}
+
+
+sub affected_rows {
+    my ($self)=@_;
+    die "Hyperdrive affected_rows takes no arguments\n" unless @_==1;
+    $self->available();
+    return $self->{'result'} ? $self->{'result'}{'affected_rows'} : undef;
+}
+
+
+sub warning_count {
+    my ($self)=@_;
+    die "Hyperdrive warning_count takes no arguments\n" unless @_==1;
+    $self->available();
+    return $self->{'result'} ? $self->{'result'}{'warning_count'} : undef;
+}
+
+
 sub finish {
     my ($self)=@_;
     die "Hyperdrive finish takes no arguments\n" unless @_==1;

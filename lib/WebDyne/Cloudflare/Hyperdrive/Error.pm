@@ -14,6 +14,8 @@ sub new {
 
 
 sub code { return shift()->{'code'}; }
+sub sqlstate { return shift()->{'sqlstate'}; }
+sub errno { return shift()->{'errno'}; }
 sub message { return shift()->{'message'}; }
 sub name { return shift()->{'name'}; }
 sub outcome_unknown { return shift()->{'outcomeUnknown'}||0; }

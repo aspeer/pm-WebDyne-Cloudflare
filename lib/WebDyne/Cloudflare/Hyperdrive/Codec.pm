@@ -22,7 +22,7 @@ sub parameters {
         elsif (!ref($value)) {
             my $text="$value";
             $text=WebDyne::Cloudflare::json_value($text);
-            die "PostgreSQL text cannot contain NUL\n" if index($text, "\0")>=0;
+            die "Hyperdrive text cannot contain NUL\n" if index($text, "\0")>=0;
             ['text', $text];
         }
         else { die "Hyperdrive parameters must be scalars, booleans or blobs\n" }
@@ -58,8 +58,11 @@ sub result {
     foreach my $column_hr (@{$columns_ar}) {
         die "Invalid Hyperdrive column\n" unless (ref($column_hr) eq 'HASH')
             &&defined($column_hr->{'name'})&&!ref($column_hr->{'name'})
-            &&defined($column_hr->{'oid'})&&!ref($column_hr->{'oid'})
-            &&($column_hr->{'oid'}=~/\A[0-9]+\z/);
+            &&((defined($column_hr->{'oid'})&&!ref($column_hr->{'oid'})
+            &&($column_hr->{'oid'}=~/\A[0-9]+\z/))
+            ||(defined($column_hr->{'driver'})&&($column_hr->{'driver'} eq 'mysql')
+            &&defined($column_hr->{'type'})&&!ref($column_hr->{'type'})
+            &&($column_hr->{'type'}=~/\A[0-9]+\z/)));
     }
     my @rows;
     foreach my $row_ar (@{$rows_ar}) {

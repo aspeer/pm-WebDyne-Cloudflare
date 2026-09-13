@@ -71,4 +71,15 @@ eval { $transport_or->call('open', capability => 'other')->get() };
 like($@, qr/Cannot override/, 'transport authority cannot be overridden');
 eval { $transport->new(scope => $scope_hr, binding => 'PRIVATE') };
 like($@, qr/unavailable/, 'unlisted binding rejected');
+my $mysql_hr=WebDyne::Cloudflare::Hyperdrive::Codec::result({
+    columns => [{ name => 'id', driver => 'mysql', type => 8 }],
+    rows => [[['text', '9007199254740993']]], count => 1, command => 'SELECT' });
+is($mysql_hr->{'rows'}[0][0], '9007199254740993', 'MySQL type metadata and exact bigint accepted');
+foreach my $column_hr ({ name => 'x', type => 8 }, { name => 'x', driver => 'mysql', type => 'bad' }) {
+    eval { WebDyne::Cloudflare::Hyperdrive::Codec::result({ columns => [$column_hr], rows => [] }) };
+    like($@, qr/Invalid Hyperdrive column/, 'invalid MySQL metadata rejected');
+}
+my $mysql_error_or=WebDyne::Cloudflare::Hyperdrive::Error->new(code => 'ER_DUP_ENTRY', sqlstate => '23000', errno => 1062);
+is($mysql_error_or->sqlstate(), '23000', 'MySQL SQLSTATE accessor');
+is($mysql_error_or->errno(), 1062, 'MySQL error number accessor');
 done_testing();

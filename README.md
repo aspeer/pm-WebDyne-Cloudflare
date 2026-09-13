@@ -1,7 +1,7 @@
 # WebDyne::Cloudflare
 
 `WebDyne::Cloudflare` lets Perl applications use Cloudflare D1 databases,
-Workers KV, R2 buckets and PostgreSQL through Hyperdrive. Install it as `@webdyne/webdyne-cloudflare` alongside
+Workers KV, R2 buckets, and PostgreSQL/MySQL through Hyperdrive. Install it as `@webdyne/webdyne-cloudflare` alongside
 [the WebDyne ZeroPerl runtime](https://github.com/aspeer/zeroperl/blob/main/WEBDYNE.md).
 The package includes the Perl modules and JavaScript adapters; you don't need
 to install the modules separately from CPAN. It works with PSP pages and plain
@@ -497,3 +497,15 @@ database ID or bucket name only when deliberately testing a remote resource.
 
 The current surfaces intentionally exclude D1 session APIs, R2 streaming
 and multipart uploads, cross-service retries, and active cancellation.
+
+### MySQL Hyperdrive
+
+Version 1.4.0 adds MySQL and compatible database support through mysql2 3.24.4.
+The binding's connection scheme selects the driver automatically; keep the same
+`hyperdriveBindings` configuration and use MySQL `?` placeholders in SQL.
+ZeroPerl 1.0.11 supports this extension without rebuilding the runtime.
+
+See the [MySQL example](examples/hyperdrive-mysql/README.md),
+[API and restrictions](lib/WebDyne/Cloudflare/Hyperdrive.pm.md#mysql-and-compatible-databases),
+and [qualification report](HYPERDRIVE-MYSQL.md). PostgreSQL's existing API and `$1`
+placeholders remain supported. MySQL and PostgreSQL SQL dialects are not translated.

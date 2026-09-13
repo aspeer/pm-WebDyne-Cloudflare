@@ -8,3 +8,8 @@ Other callback exceptions are wrapped only when cleanup also fails; `cause()` th
 returns the original exception and `message()` describes it. Successful rollback
 rethrows the original callback exception unchanged. Error details are intended for
 private handling; they are not safe automatic HTTP response bodies.
+
+For MySQL, `code()` returns the symbolic server code, `sqlstate()` returns the
+five-character SQLSTATE and `errno()` returns the numeric error. Connection and
+authentication failures are redacted. PostgreSQL retains its existing SQLSTATE in
+`code()`; its new MySQL-specific accessors return undef.

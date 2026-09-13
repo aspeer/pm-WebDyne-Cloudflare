@@ -52,3 +52,13 @@ returns the PostgreSQL command tag. Before execution or after finish these retur
 for reuse. Unexecuted or finished statements have no rows. Disconnect invalidates
 all associated statements, and transaction callback statements expire with their
 facade; subsequent operations throw even if results were buffered earlier.
+
+## MySQL result metadata
+
+`insert_id()` returns the exact decimal insert ID string from the last MySQL DML
+result, including `"0"` when the driver reports no generated ID. `affected_rows()`
+returns its affectedRows count and `warning_count()` its warning count. These
+accessors return undef before execution, after finish, after failed execution,
+or when the result omits that metadata (including PostgreSQL results).
+MySQL columns carry `driver => 'mysql'`, `type`, `flags`, and `charset`, while
+PostgreSQL columns retain `oid`. Both retain ordered names and duplicate columns.

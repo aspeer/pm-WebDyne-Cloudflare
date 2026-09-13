@@ -26,6 +26,8 @@ const expected = [
   "js/hyperdrive-host.js",
   "js/hyperdrive-codec.js",
   "js/hyperdrive-pg.js",
+  "js/hyperdrive-postgres.js",
+  "js/hyperdrive-mysql.js",
   "lib/WebDyne/Cloudflare/Hyperdrive.pm",
   "lib/WebDyne/Cloudflare/Hyperdrive/Statement.pm",
   "lib/WebDyne/Cloudflare/Hyperdrive/Blob.pm",

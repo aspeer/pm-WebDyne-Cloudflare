@@ -1,0 +1,23 @@
+{
+  "name": "webdyne-hyperdrive-mysql-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "webdyne-cloudflare check",
+    "dev": "webdyne-cloudflare dev"
+  },
+  "dependencies": {
+    "@webdyne/webdyne-zeroperl": "^1.0.11",
+    "@webdyne/webdyne-cloudflare": "^1.4.0"
+  },
+  "webdyne": {
+    "entry": "app.pagi",
+    "static": false,
+    "extensions": {
+      "@webdyne/webdyne-cloudflare": { "hyperdriveBindings": ["DB"] }
+    },
+    "cloudflare": {
+      "hyperdrive": [{ "binding": "DB", "id": "REPLACE_WITH_YOUR_32_HEX_HYPERDRIVE_ID" }]
+    }
+  }
+}

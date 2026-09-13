@@ -52,7 +52,16 @@ is_deeply($db_or->selectrow_hashref('select 1', undef)->get(), { x => 'last' }, 
 is_deeply($db_or->selectall_arrayref('select 1', { Slice => {} })->get(), [{ x => 'last' }, { x => undef }], 'Slice convenience');
 is_deeply($db_or->selectrow_arrayref('select 1', undef)->get(), [1, 'last'], 'array convenience');
 
+is($statement_or->insert_id(), undef, 'PostgreSQL has no insert ID metadata');
 my $saved_hr=$result_hr;
+$result_hr={ columns => [], rows => [], count => 1, command => 'INSERT',
+    insert_id => '9007199254740993', affected_rows => 1, warning_count => 0 };
+$statement_or->execute()->get();
+is($statement_or->insert_id(), '9007199254740993', 'large MySQL insert ID is exact');
+is($statement_or->affected_rows(), 1, 'MySQL affected rows');
+is($statement_or->warning_count(), 0, 'zero warnings preserved');
+$statement_or->finish();
+is($statement_or->insert_id(), undef, 'finish clears insert metadata');
 $result_hr={ columns => [], rows => [], count => 0, command => 'UPDATE' };
 is($db_or->do('update items', undef)->get(), '0E0', 'zero affected rows are true 0E0');
 ok($db_or->do('update items', undef)->get(), 'zero result is boolean true');

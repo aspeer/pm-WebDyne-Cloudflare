@@ -1,6 +1,7 @@
 .github/workflows/webdyne-cloudflare-npm.yml
 .github/workflows/webdyne-cloudflare-release.yml
 Changes
+HYPERDRIVE-MYSQL.md
 HYPERDRIVE-PHASE1.md
 HYPERDRIVE-PHASE2.md
 HYPERDRIVE-PHASE3.md
@@ -16,6 +17,10 @@ examples/app/d1-api.psp
 examples/app/d1.psp
 examples/app/kv.psp
 examples/app/r2.psp
+examples/hyperdrive-mysql/README.md
+examples/hyperdrive-mysql/app/app.pagi
+examples/hyperdrive-mysql/package.json
+examples/hyperdrive-mysql/schema.sql
 examples/hyperdrive/README.md
 examples/hyperdrive/app/app.pagi
 examples/hyperdrive/package.json
@@ -27,7 +32,9 @@ js/cloudflare.js
 js/d1-host.js
 js/hyperdrive-codec.js
 js/hyperdrive-host.js
+js/hyperdrive-mysql.js
 js/hyperdrive-pg.js
+js/hyperdrive-postgres.js
 js/hyperdrive.js
 js/kv-host.js
 js/r2-host.js
@@ -76,6 +83,14 @@ prototypes/hyperdrive-api/results/deployed.json
 prototypes/hyperdrive-api/smoke.mjs
 prototypes/hyperdrive-api/stage.mjs
 prototypes/hyperdrive-api/worker.js
+prototypes/hyperdrive-mysql/README.md
+prototypes/hyperdrive-mysql/app.pagi
+prototypes/hyperdrive-mysql/results/identity.json
+prototypes/hyperdrive-mysql/results/mysql.json
+prototypes/hyperdrive-mysql/results/postgres.json
+prototypes/hyperdrive-mysql/smoke.mjs
+prototypes/hyperdrive-mysql/stage.mjs
+prototypes/hyperdrive-mysql/worker.js
 prototypes/hyperdrive-qualification/README.md
 prototypes/hyperdrive-qualification/app.pagi
 prototypes/hyperdrive-qualification/results/development.json
@@ -105,8 +120,10 @@ t.js/check-package.mjs
 t.js/cloudflare.test.mjs
 t.js/d1-batch.test.mjs
 t.js/d1-host.test.mjs
+t.js/hyperdrive-mysql.test.mjs
 t.js/hyperdrive-pg.test.mjs
 t.js/hyperdrive.test.mjs
+t.js/integration-mysql.mjs
 t.js/kv-host.test.mjs
 t.js/prepare-storage-smoke.mjs
 t.js/r2-host.test.mjs
