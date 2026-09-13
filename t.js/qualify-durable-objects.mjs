@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const runtime=process.argv[2];
-if(!runtime)throw new Error('Usage: node t.js/qualify-durable-objects.mjs RUNTIME_TARBALL');
+if(!runtime)throw new Error('Usage: node t.js/qualify-durable-objects.mjs RUNTIME_VERSION');
 const directory=await mkdtemp(join(tmpdir(),'webdyne-do-qualification-'));
 const cache=join(directory,'cache');
 const execute=(cmd,args)=>execFileSync(cmd,args,{cwd:directory,encoding:'utf8',env:{...process.env,npm_config_cache:cache,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false'},maxBuffer:16*1024*1024});
@@ -37,7 +37,7 @@ try{
   await cp(join(root,'t/fixtures/durable-object/worker.js'),join(directory,'worker.js'));
   const [packed]=JSON.parse(execFileSync('npm',['pack','--json','--ignore-scripts','--pack-destination',directory,'--cache',cache],{cwd:root,encoding:'utf8'}));
   const pkg=JSON.parse(await readFile(join(root,'examples/durable-objects/package.json')));
-  pkg.dependencies={'@webdyne/webdyne-zeroperl-5.44.0':resolve(runtime),'@webdyne/webdyne-cloudflare':join(directory,packed.filename)};
+  pkg.dependencies={'@webdyne/webdyne-zeroperl-5.44.0':/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(runtime) ? runtime : resolve(runtime),'@webdyne/webdyne-cloudflare':join(directory,packed.filename)};
   pkg.webdyne.entry='app.pagi';
   const definition=pkg.webdyne.cloudflare.durableObjects[0];
   definition.perlPackage='Example::Probe';definition.methods=['increment','read','echo','rollback','remember','stale','cycle','delay','failure'];

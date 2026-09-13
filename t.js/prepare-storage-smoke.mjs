@@ -18,12 +18,12 @@ function options(arguments_) {
 }
 
 const configured = options(process.argv.slice(2));
-for (const required of ["runtime-tarball", "extension-tarball", "destination"]) {
+for (const required of ["destination"]) {
   if (!configured[required]) throw new Error(`Missing --${required}`);
 }
 const destination = resolve(configured.destination);
-const runtimeTarball = await realpath(configured["runtime-tarball"]);
-const extensionTarball = await realpath(configured["extension-tarball"]);
+const runtimeSource = configured["runtime-version"] ?? (configured["runtime-tarball"] ? pathToFileURL(await realpath(configured["runtime-tarball"])).href : "1.0.14");
+const extensionSource = configured["extension-version"] ?? (configured["extension-tarball"] ? pathToFileURL(await realpath(configured["extension-tarball"])).href : "1.7.1");
 const remote = configured.remote === "true";
 const services = (configured.services ?? "d1,kv,r2").split(",").map((value) => value.trim()).filter(Boolean);
 if (configured.remote !== undefined && !/^(?:true|false)$/.test(configured.remote)) {
@@ -64,8 +64,8 @@ const packageJson = {
     dev: "webdyne-cloudflare dev",
   },
   dependencies: {
-    "@webdyne/webdyne-cloudflare": pathToFileURL(extensionTarball).href,
-    "@webdyne/webdyne-zeroperl-5.44.0": pathToFileURL(runtimeTarball).href,
+    "@webdyne/webdyne-cloudflare": extensionSource,
+    "@webdyne/webdyne-zeroperl-5.44.0": runtimeSource,
   },
   webdyne: {
     entry: `${services[0]}.psp`,

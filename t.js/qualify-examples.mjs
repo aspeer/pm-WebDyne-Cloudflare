@@ -1,4 +1,4 @@
-// Check copied examples against exact runtime/extension archives, using local resources.
+// Check copied examples with a released runtime and the current extension, using local resources.
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {mkdtemp, cp, readFile, writeFile, rm} from 'node:fs/promises';
@@ -11,8 +11,8 @@ const root=fileURLToPath(new URL('..', import.meta.url));
 const [runtimeArg, ...options]=process.argv.slice(2);
 const useCompose=options.includes('--compose');
 const selected=options.filter(value=>value!=='--compose');
-if (!runtimeArg) throw new Error('Usage: node t.js/qualify-examples.mjs RUNTIME_TARBALL [--compose] [EXAMPLE ...]');
-const runtime=resolve(runtimeArg);
+if (!runtimeArg) throw new Error('Usage: node t.js/qualify-examples.mjs RUNTIME_VERSION [--compose] [EXAMPLE ...]');
+const runtime=/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(runtimeArg) ? runtimeArg : resolve(runtimeArg);
 const names=selected.length ? selected : ['storage','d1-sessions','secrets-store','durable-objects','hyperdrive','hyperdrive-mysql'];
 const allowed=new Set(['storage','d1-sessions','secrets-store','durable-objects','hyperdrive','hyperdrive-mysql']);
 assert.ok(names.every(name=>allowed.has(name)), 'Unknown example');

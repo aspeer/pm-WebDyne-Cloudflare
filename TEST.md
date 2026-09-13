@@ -1,8 +1,8 @@
 # Testing WebDyne::Cloudflare
 
 Use Node.js 24+, Perl 5.20+ with Future and Future::AsyncAwait, and the locked
-Wrangler version. Worker tests need a separately qualified ZeroPerl 1.0.14+
-Perl 5.44 runtime tarball. The declared minimum Perl has not been separately
+Wrangler version. Worker tests need the released ZeroPerl 1.0.14+
+Perl 5.44 runtime. The declared minimum Perl has not been separately
 qualified; see the [qualification record](docs/qualification.md).
 
 ## Contract and package checks
@@ -26,13 +26,13 @@ approve a package. Use `actionlint .github/workflows/*.yml` for workflow changes
 ## Local Worker storage integration
 
 
-Create an independent test application using local runtime and extension
-tarballs. The destination must not already exist:
+Create an independent test application using released runtime and extension
+packages. The destination must not already exist:
 
 ```sh
 node t.js/prepare-storage-smoke.mjs \
-  --runtime-tarball /absolute/path/runtime-5.44.tgz \
-  --extension-tarball /absolute/path/cloudflare-extension.tgz \
+  --runtime-version 1.0.14 \
+  --extension-version 1.7.1 \
   --destination /tmp/webdyne-cloudflare-smoke
 cd /tmp/webdyne-cloudflare-smoke
 npm install --ignore-scripts
@@ -68,10 +68,10 @@ use them only in isolated test environments.
 ## Example validation
 
 ```sh
-node t.js/qualify-examples.mjs /absolute/path/to/runtime.tgz --compose
+node t.js/qualify-examples.mjs 1.0.14 --compose
 ```
 
-The runner copies each example, installs exact local archives, checks both entry
+The runner copies each example, installs the released runtime and packages the current extension for testing, checks both entry
 builds, starts the actual npm development commands and validates HTTP forms/JSON.
 With `--compose`, Docker starts the supplied PostgreSQL/MySQL services on local
 ports 35432/33316 under unique project names and adds an HTML-escaping probe row.
@@ -88,7 +88,7 @@ INSERT INTO demo_inventory VALUES ('ESCAPE', '<script>alert(1)</script>', 1);
 
 
 Follow [examples/README.md](examples/README.md) to copy each independent app
-and install candidate tarballs. Run `npm run check` for the generated Worker
+and install the released packages from npm. Run `npm run check` for the generated Worker
 and Wrangler dry run. Lint PSP pages with `wdlint`, then render actual GET/POST
 requests under the Worker to exercise bindings and verify HTML escaping.
 Native `wdrender` needs an injected request scope/host adapter for service pages;
@@ -118,7 +118,7 @@ test database. Ordinary calls and session metadata can legitimately use the prim
 ## Durable Objects
 
 ```sh
-node t.js/qualify-durable-objects.mjs /absolute/path/to/runtime.tgz
+node t.js/qualify-durable-objects.mjs 1.0.14
 ```
 
 This independent fixture packs the current extension, builds and dry-runs a

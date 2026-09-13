@@ -4,13 +4,13 @@ These maintained test harnesses use the production extension and generated Worke
 They are not user examples. The PostgreSQL harness includes the reusable public-API
 fixture as `core.pagi`; both drivers share `support/auth.js`.
 
-Use separately qualified runtime/extension tarballs and a disposable database.
+Use released runtime and extension packages and a disposable database.
 PostgreSQL requires `t/fixtures/hyperdrive-postgres.sql`; MySQL uses unique test
 tables and removes them. Disable Hyperdrive query caching. Supply your own
 32-hex-digit Hyperdrive ID explicitly:
 
 ```sh
-node t/integration/hyperdrive-postgres/stage.mjs RUNTIME_TARBALL EXTENSION_TARBALL NEW_DIRECTORY HYPERDRIVE_ID
+node t/integration/hyperdrive-postgres/stage.mjs 1.0.14 1.7.1 NEW_DIRECTORY HYPERDRIVE_ID
 # Or use t/integration/hyperdrive-mysql/stage.mjs with a MySQL binding.
 ```
 

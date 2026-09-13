@@ -16,13 +16,8 @@ npm run dev
 Open the local URL printed by Wrangler (normally `http://localhost:8787/`).
 Stop the Worker with Ctrl-C.
 
-These examples require runtime 1.0.14+ and extension 1.7.1+. While their npm
-approvals are pending, replace `npm install` above with:
-
-```sh
-npm pkg delete dependencies.@webdyne/webdyne-zeroperl
-npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
-```
+These examples require ZeroPerl 1.0.14+ and WebDyne::Cloudflare 1.7.1+,
+installed from npm by `npm install`.
 
 ## What to expect
 

@@ -24,16 +24,9 @@ npm run check
 npm run dev
 ```
 
-The examples require ZeroPerl 1.0.14+ and extension 1.7.1+. Until those versions
-are approved on npm, replace `npm install` with explicit qualified tarballs:
+The examples require ZeroPerl 1.0.14+ and WebDyne::Cloudflare 1.7.1+.
+`npm install` installs the released packages from npm.
 
-```sh
-npm pkg delete dependencies.@webdyne/webdyne-zeroperl
-npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
-```
-
-The runtime tarball supplies `@webdyne/webdyne-zeroperl-5.44.0`; removing the
-alias dependency avoids trying to resolve an unpublished alias from npm.
 `npm run check` generates and dry-runs the Worker. `npm run build` only generates
 it. Service READMEs list any database schema or local secret setup required before
 requests work. The default URL is printed by the development command.

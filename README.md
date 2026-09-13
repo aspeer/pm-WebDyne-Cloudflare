@@ -30,8 +30,8 @@ npm install @webdyne/webdyne-zeroperl@^1.0.14 @webdyne/webdyne-cloudflare@^1.7.1
 npx webdyne-cloudflare init
 ```
 
-These are candidate version requirements. Until the versions are approved on
-npm, install their qualified local tarballs as described in the examples guide.
+Install the released packages from npm. See the examples guide for complete
+local development instructions.
 Create `app/app.psp`, enable the extension and configure the required bindings
 in package.json using the [configuration guide](docs/configuration.md), then
 run `npm run check` and `npm run dev`. Initialization creates scaffolding;
