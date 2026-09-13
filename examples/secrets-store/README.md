@@ -1,27 +1,51 @@
 # Secrets Store example
 
-Follow the [installation guide](../README.md#install-and-run),
-then run `npm run check` to generate `.webdyne/wrangler.jsonc`.
-The all-zero store ID is a local placeholder, not a production resource.
+## Quick start
 
-Create a dummy secret in the local store using the same generated configuration:
+Requires Node.js 24+ and npm. From the repository root, copy this example into a
+new directory and work there:
 
 ```sh
-npx wrangler secrets-store secret create 00000000000000000000000000000000 --name webdyne-local-demo --scopes workers --config .webdyne/wrangler.jsonc
+cp -R examples/secrets-store /tmp/webdyne-secrets-store-example
+cd /tmp/webdyne-secrets-store-example
+npm install
+npm run setup:local
+npm run check
 npm run dev
 ```
 
-Enter a dummy value at the prompt. Do not add `--remote` for this local example.
-The default WebDyne page retrieves the value and renders `Secret retrieval succeeded`.
-The [native PAGI alternative](../README.md#native-pagi-alternatives) returns the
-same confirmation as plain text. Both set `Cache-Control: no-store`.
-It does not return the value or its length. Local persistence stays under
-Wrangler's ignored `.wrangler` directory.
+Open the local URL printed by Wrangler (normally `http://localhost:8787/`).
+Stop the Worker with Ctrl-C.
 
-For deployment, replace the store ID and secret name with an existing account
-secret configured with the `workers` scope. Configure bindings independently
-in each named Wrangler environment. Creating production resources and deploying
-this example are separate operator actions.
+These examples require runtime 1.0.14+ and extension 1.7.1+. While their npm
+approvals are pending, replace `npm install` above with:
 
-See [SecretsStore.pm.md](../../lib/WebDyne/Cloudflare/SecretsStore.pm.md)
-for the API, errors, lifecycle, and custom-Worker configuration.
+```sh
+npm pkg delete dependencies.@webdyne/webdyne-zeroperl
+npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
+```
+
+## What to expect
+
+`setup:local` builds the Worker configuration and creates a dummy secret in
+Wrangler's local store. It explicitly selects `--remote=false`, needs no login,
+and uses the fixed non-secret test value `webdyne-test-dummy-do-not-render`.
+The store ID and name match package.json. The command can be rerun; it restores
+the dummy value for this local demo. Local persistence lives in `.wrangler`.
+
+The default WebDyne page renders `Secret retrieval succeeded`. It never returns
+the value or its length, and its cache policy includes `no-store`.
+
+To run the native PAGI supplement, stop the Worker and run:
+
+```sh
+npm pkg set webdyne.entry=app.pagi
+npm run dev
+```
+
+It returns the same confirmation as plain text. Switch back with
+`npm pkg set webdyne.entry=app.psp` and restart. Both variants share local storage.
+
+For production, configure your existing account secret and binding deliberately;
+`setup:local` is only for this local demo. See the
+[Secrets Store API](../../lib/WebDyne/Cloudflare/SecretsStore.pm.md).

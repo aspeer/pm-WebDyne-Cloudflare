@@ -5,7 +5,12 @@
   "scripts": {
     "build": "webdyne-cloudflare build",
     "check": "webdyne-cloudflare check",
-    "dev": "webdyne-cloudflare dev"
+    "dev": "webdyne-cloudflare dev",
+    "db:up": "docker compose up --build --detach --wait --wait-timeout 180",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down --volumes && docker compose up --build --detach --wait --wait-timeout 180",
+    "check:local": "node local.mjs check",
+    "dev:local": "node local.mjs dev"
   },
   "dependencies": {
     "@webdyne/webdyne-zeroperl": "^1.0.14",
@@ -25,7 +30,7 @@
       "hyperdrive": [
         {
           "binding": "DB",
-          "id": "REPLACE_WITH_YOUR_32_HEX_HYPERDRIVE_ID"
+          "id": "00000000000000000000000000000000"
         }
       ]
     }

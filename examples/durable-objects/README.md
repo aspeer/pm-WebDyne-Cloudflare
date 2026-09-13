@@ -1,7 +1,32 @@
 # WebDyne Durable Object counter
 
-Follow the [installation guide](../README.md#install-and-run). Open `/` to read
-the named `example` counter and submit the form to increment it. The default
+## Quick start
+
+Requires Node.js 24+ and npm. From the repository root, copy this example into a
+new directory and work there:
+
+```sh
+cp -R examples/durable-objects /tmp/webdyne-durable-objects-example
+cd /tmp/webdyne-durable-objects-example
+npm install
+npm run check
+npm run dev
+```
+
+Open the local URL printed by Wrangler (normally `http://localhost:8787/`).
+Stop the Worker with Ctrl-C.
+
+These examples require runtime 1.0.14+ and extension 1.7.1+. While their npm
+approvals are pending, replace `npm install` above with:
+
+```sh
+npm pkg delete dependencies.@webdyne/webdyne-zeroperl
+npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
+```
+
+## What to expect
+
+Read the named `example` counter and submit the form to increment it. The default
 `app/app.psp` is a WebDyne page; `lib/Example/Counter.pm` contains ordinary Perl
 object handlers. The generated Worker exports `Counter` with SQLite storage.
 

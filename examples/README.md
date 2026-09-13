@@ -38,6 +38,18 @@ alias dependency avoids trying to resolve an unpublished alias from npm.
 it. Service READMEs list any database schema or local secret setup required before
 requests work. The default URL is printed by the development command.
 
+## Local service setup
+
+Every example README contains its complete quick start. PostgreSQL and MySQL
+include a pinned `compose.yaml` that seeds a local database and publishes only a
+loopback port. Use `npm run db:up`, `npm run check:local`, and `npm run dev:local`.
+`db:down` preserves database data; `db:reset` deletes and reseeds that example's
+volume. The local helpers deliberately use demo credentials and a loopback URL.
+
+Secrets Store uses `npm run setup:local` to build its configuration and create a
+fixed dummy secret with remote access explicitly disabled. D1/KV/R2 and Durable
+Objects use Wrangler's local implementations; they need no Docker services.
+
 ## Native PAGI alternatives
 
 For a directory with `app/app.pagi`, stop the Worker, change its entry, and restart:
@@ -54,8 +66,8 @@ Durable Object handlers remain ordinary Perl modules in both variants.
 
 ## Local and remote resources
 
-Storage IDs in examples are local placeholders. Hyperdrive requires your own
-configuration ID and a private local connection string. Configure real resources
+Storage IDs in examples are local placeholders. The Hyperdrive examples include Docker Compose databases and local connection
+helpers; no hosted configuration is required for their local quick starts. Configure real resources
 explicitly before deployment. The examples are small local demonstrations:
 add application authentication and request authorization before exposing writes
 publicly. No example prints database credentials or secret values.

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "webdyne-cloudflare build",
     "check": "webdyne-cloudflare check",
-    "dev": "webdyne-cloudflare dev"
+    "dev": "webdyne-cloudflare dev",
+    "setup:local": "npm run build && wrangler secrets-store secret create 00000000000000000000000000000000 --name webdyne-local-demo --scopes workers --value webdyne-test-dummy-do-not-render --remote=false --config .webdyne/wrangler.jsonc"
   },
   "dependencies": {
     "@webdyne/webdyne-zeroperl": "^1.0.14",

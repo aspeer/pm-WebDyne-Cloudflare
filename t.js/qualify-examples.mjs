@@ -8,8 +8,10 @@ import {fileURLToPath} from 'node:url';
 import {once} from 'node:events';
 
 const root=fileURLToPath(new URL('..', import.meta.url));
-const [runtimeArg, ...selected]=process.argv.slice(2);
-if (!runtimeArg) throw new Error('Usage: node t.js/qualify-examples.mjs RUNTIME_TARBALL [EXAMPLE ...]');
+const [runtimeArg, ...options]=process.argv.slice(2);
+const useCompose=options.includes('--compose');
+const selected=options.filter(value=>value!=='--compose');
+if (!runtimeArg) throw new Error('Usage: node t.js/qualify-examples.mjs RUNTIME_TARBALL [--compose] [EXAMPLE ...]');
 const runtime=resolve(runtimeArg);
 const names=selected.length ? selected : ['storage','d1-sessions','secrets-store','durable-objects','hyperdrive','hyperdrive-mysql'];
 const allowed=new Set(['storage','d1-sessions','secrets-store','durable-objects','hyperdrive','hyperdrive-mysql']);
@@ -17,17 +19,18 @@ assert.ok(names.every(name=>allowed.has(name)), 'Unknown example');
 const directory=await mkdtemp(join(tmpdir(),'webdyne-examples-'));
 const cache=join(directory,'cache');
 const wrangler=join(root,'node_modules/wrangler/bin/wrangler.js');
+const databases=[];
 let server;
 let log='';
 let base;
-const execute=(cmd,args,cwd,extra={})=>execFileSync(cmd,args,{cwd,encoding:'utf8',env:{...process.env,npm_config_cache:cache,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false',...extra},maxBuffer:16*1024*1024});
+const execute=(cmd,args,cwd,extra={})=>execFileSync(cmd,args,{cwd,encoding:'utf8',env:{...process.env,npm_config_cache:cache,BUILDX_CONFIG:join(directory,'buildx'),XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false',...extra},maxBuffer:16*1024*1024});
 async function stop(){
-    if(server&&server.exitCode===null){const done=once(server,'exit');server.kill('SIGTERM');await done;}
+    if(server&&server.exitCode===null){const done=once(server,'exit');process.kill(-server.pid,'SIGTERM');await done;}
     server=undefined;
 }
 async function start(cwd,extra){
     log='';
-    server=spawn(process.execPath,[wrangler,'dev','--config','.webdyne/wrangler.jsonc','--port','0','--inspector-port','0'],{cwd,env:{...process.env,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false',...extra},stdio:['ignore','pipe','pipe']});
+    server=spawn('npm',['run',extra.DB_PORT?'dev:local':'dev','--','--','--port','0','--inspector-port','0'],{cwd,detached:true,env:{...process.env,XDG_CONFIG_HOME:join(directory,'config'),WRANGLER_SEND_METRICS:'false',...extra},stdio:['ignore','pipe','pipe']});
     for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{log+=chunk;});
     for(let attempt=0;attempt<300;attempt++){
         const match=log.match(/Ready on (http:\/\/[^\s\x1b]+)/);
@@ -55,15 +58,33 @@ try{
         const url=process.env[name==='hyperdrive'?'WEBDYNE_POSTGRES_TEST_URL':'WEBDYNE_MYSQL_TEST_URL'];
         const extra=database ? {CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB:url||(name==='hyperdrive'?'postgres://test:test@127.0.0.1:5432/test':'mysql://test:test@127.0.0.1:3306/test')} : {};
         if(database)pkg.webdyne.cloudflare.hyperdrive[0].id='0'.repeat(32);
+        if(database&&useCompose){
+            extra.DB_PORT=name==='hyperdrive'?'35432':'33316';
+            extra.COMPOSE_PROJECT_NAME=`webdyne-check-${directory.split('/').at(-1).toLowerCase()}-${name}`;
+            delete extra.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB;
+        }
         await writeFile(join(cwd,'package.json'),JSON.stringify(pkg,null,2));
         execute('npm',['install','--ignore-scripts'],cwd);
-        execute('npm',['run','check'],cwd,extra);
+        execute('npm',['run',database&&useCompose?'check:local':'check'],cwd,extra);
+        if(database&&useCompose){
+            databases.push({cwd,extra});
+            try { execute('npm',['run','db:up'],cwd,extra); }
+            catch(error){console.error(execute('docker',['compose','logs','--tail','40'],cwd,extra));throw error;}
+            const sql="INSERT INTO demo_inventory VALUES ('ESCAPE', '<script>alert(1)</script>', 1);";
+            const args=name==='hyperdrive'
+                ? ['-e','PGPASSWORD=local-demo-only','db','psql','-U','webdyne','-d','webdyne_demo','-c',sql]
+                : ['-e','MYSQL_PWD=local-demo-only','db','mysql','-uwebdyne','webdyne_demo','-e',sql];
+            execute('docker',['compose','exec','-T',...args],cwd,extra);
+        }
         if(name==='storage')execute(process.execPath,[wrangler,'d1','execute','DB','--local','--config','.webdyne/wrangler.jsonc','--file','schema.sql'],cwd);
-        if(name==='secrets-store')execute(process.execPath,[wrangler,'secrets-store','secret','create','0'.repeat(32),'--name','webdyne-local-demo','--scopes','workers','--value','webdyne-test-dummy-do-not-render','--config','.webdyne/wrangler.jsonc'],cwd);
-        if(database&&!url){
+        if(name==='secrets-store'){
+            execute('npm',['run','setup:local'],cwd);
+            execute('npm',['run','setup:local'],cwd);
+        }
+        if(database&&!url&&!useCompose){
             pkg.webdyne.entry='app.pagi';
             await writeFile(join(cwd,'package.json'),JSON.stringify(pkg,null,2));
-            execute('npm',['run','check'],cwd,extra);
+            execute('npm',['run',database&&useCompose?'check:local':'check'],cwd,extra);
             console.log(`${name}: both entry builds/dry runs PASS; database HTTP checks SKIPPED (no test URL)`);
             continue;
         }
@@ -98,7 +119,7 @@ try{
         if(name!=='storage'){
             pkg.webdyne.entry='app.pagi';
             await writeFile(join(cwd,'package.json'),JSON.stringify(pkg,null,2));
-            execute('npm',['run','check'],cwd,extra);
+            execute('npm',['run',database&&useCompose?'check:local':'check'],cwd,extra);
             await start(cwd,extra);
             const results=await Promise.all(Array.from({length:4},()=>request()));
             for(const result of results){
@@ -117,7 +138,25 @@ try{
             if(name==='durable-objects')assert.equal(JSON.parse((await request('/',{method:'POST'})).body).value,2);
             await stop();
         }
+        if(database&&useCompose){
+            const count=()=>{
+                const sql='SELECT count(*) FROM demo_inventory';
+                const args=name==='hyperdrive'
+                    ? ['-e','PGPASSWORD=local-demo-only','db','psql','-U','webdyne','-d','webdyne_demo','-tAc',sql]
+                    : ['-e','MYSQL_PWD=local-demo-only','db','mysql','-uwebdyne','webdyne_demo','-Nse',sql];
+                return Number(execute('docker',['compose','exec','-T',...args],cwd,extra).trim());
+            };
+            execute('npm',['run','db:down'],cwd,extra);
+            execute('npm',['run','db:up'],cwd,extra);
+            assert.equal(count(),2,'database stop/start preserves the probe row');
+            execute('npm',['run','db:reset'],cwd,extra);
+            assert.equal(count(),1,'database reset restores only the seed row');
+        }
         console.log(`${name}: WebDyne and applicable native PAGI build/dry run/HTTP checks PASS`);
     }
 }catch(error){console.error(log);throw error;}
-finally{await stop();await rm(directory,{recursive:true,force:true});}
+finally{
+    await stop();
+    for(const {cwd,extra} of databases)execute('docker',['compose','down','--volumes'],cwd,extra);
+    await rm(directory,{recursive:true,force:true});
+}

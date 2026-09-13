@@ -57,3 +57,22 @@ initialize its verifier; this is not a claim of local provenance verification.
   false. The smoke script is byte-identical to the pre-cleanup version; its remote
   disconnect assertion remains intact. Remote cancellation has not been requalified
   with this candidate, and the local run must not be described as a full pass.
+
+## Local example setup
+
+The 1.7.1 example setup passed with the same ZeroPerl 1.0.14 artifact:
+
+- All six WebDyne applications and five native PAGI supplements ran through their
+  documented npm development commands and passed HTML/JSON/text checks.
+- `setup:local` created the Secrets Store dummy value without remote access and
+  succeeded when repeated; neither client rendered the secret.
+- Both Compose databases passed readiness, automatic schema initialization,
+  inventory queries and HTML escaping. `db:down`/`db:up` preserved an added row;
+  `db:reset` removed it and restored only seed data. Test volumes were removed.
+- Database images pin official PostgreSQL/MySQL digests and copy the schema at
+  build time, avoiding Docker Desktop/Colima host file-sharing requirements.
+- Standard checks remain 399 Perl assertions, 78 JavaScript tests and a 76-file
+  npm package. Relative documentation links and source manifest checks passed.
+
+The maintainer accepted the documented local PostgreSQL cancellation limitation
+for this cleanup release; its remote assertion remains unchanged.

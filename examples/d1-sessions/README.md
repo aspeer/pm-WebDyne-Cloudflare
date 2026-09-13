@@ -1,6 +1,31 @@
 # D1 sessions and bookmarks
 
-Follow the [installation guide](../README.md#install-and-run), then open `/`.
+## Quick start
+
+Requires Node.js 24+ and npm. From the repository root, copy this example into a
+new directory and work there:
+
+```sh
+cp -R examples/d1-sessions /tmp/webdyne-d1-sessions-example
+cd /tmp/webdyne-d1-sessions-example
+npm install
+npm run check
+npm run dev
+```
+
+Open the local URL printed by Wrangler (normally `http://localhost:8787/`).
+Stop the Worker with Ctrl-C.
+
+These examples require runtime 1.0.14+ and extension 1.7.1+. While their npm
+approvals are pending, replace `npm install` above with:
+
+```sh
+npm pkg delete dependencies.@webdyne/webdyne-zeroperl
+npm install /absolute/path/to/runtime-5.44.tgz /absolute/path/to/cloudflare-extension.tgz
+```
+
+## What to expect
+
 The default WebDyne page executes read-only `SELECT 7` through a session and
 carries its next bookmark in a hidden form field and `x-d1-bookmark` response
 header. Submit the form to continue that session. A request with no bookmark

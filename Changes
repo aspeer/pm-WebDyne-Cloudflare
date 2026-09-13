@@ -1,6 +1,8 @@
 Revision history for WebDyne-Cloudflare
 
 1.7.1  2026-09-13
+    Add seeded Docker Compose databases and local dummy-secret setup for examples.
+    Verify documented npm startup commands and make example quick starts self-contained.
     Organize service examples with WebDyne pages first and native PAGI supplements.
     Consolidate configuration, release guidance and dated qualification evidence.
     Preserve reusable authenticated database harnesses under t/integration.

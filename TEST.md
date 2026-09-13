@@ -68,14 +68,17 @@ use them only in isolated test environments.
 ## Example validation
 
 ```sh
-node t.js/qualify-examples.mjs /absolute/path/to/runtime.tgz
+node t.js/qualify-examples.mjs /absolute/path/to/runtime.tgz --compose
 ```
 
 The runner copies each example, installs exact local archives, checks both entry
-builds, renders HTTP requests and validates forms/JSON. Optional example names
-limit the run. It cleans up its generated applications. PostgreSQL/MySQL HTTP
-checks require private `WEBDYNE_POSTGRES_TEST_URL` / `WEBDYNE_MYSQL_TEST_URL`
-variables pointing to disposable local databases. Without them, it reports those
+builds, starts the actual npm development commands and validates HTTP forms/JSON.
+With `--compose`, Docker starts the supplied PostgreSQL/MySQL services on local
+ports 35432/33316 under unique project names and adds an HTML-escaping probe row.
+It tests repeated local dummy-secret setup. Generated applications and test
+database volumes are removed on completion. Optional example names limit the run.
+Without `--compose`, PostgreSQL/MySQL HTTP checks require private `WEBDYNE_POSTGRES_TEST_URL` / `WEBDYNE_MYSQL_TEST_URL`
+variables pointing to disposable local databases. Without those URLs, it reports those
 HTTP checks as skipped and still builds both entries. Seed each database using
 its example schema, plus this HTML-escaping probe row:
 
