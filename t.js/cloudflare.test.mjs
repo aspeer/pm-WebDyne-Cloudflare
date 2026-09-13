@@ -25,6 +25,7 @@ test("the npm lifecycle keeps D1, KV, and R2 capabilities independent", () => {
   });
   assert.deepEqual([...callbacks.keys()].sort(), [
     "WebDyne::Cloudflare::SecretsStore::Host::call",
+    "WebDyne::Cloudflare::DurableObject::Host::call",
     D1_HOST_FUNCTION_NAME,
     KV_HOST_FUNCTION_NAME,
     R2_HOST_FUNCTION_NAME,

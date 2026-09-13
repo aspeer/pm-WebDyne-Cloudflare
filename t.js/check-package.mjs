@@ -14,6 +14,16 @@ const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"
 const cache = await mkdtemp(join(tmpdir(), "webdyne-cloudflare-npm-cache-"));
 
 const expected = [
+  "js/durable-object.js",
+  "js/durable-object-runtime.js",
+  "js/durable-object-host.js",
+  "js/durable-object-codec.js",
+  "lib/WebDyne/Cloudflare/DurableObject.pm",
+  "lib/WebDyne/Cloudflare/DurableObject/Context.pm",
+  "lib/WebDyne/Cloudflare/DurableObject/Handler.pm",
+  "lib/WebDyne/Cloudflare/DurableObject/Error.pm",
+  "lib/WebDyne/Cloudflare/DurableObject/Bytes.pm",
+
   "js/secrets-store-host.js",
   "lib/WebDyne/Cloudflare/SecretsStore.pm",
   "lib/WebDyne/Cloudflare/SecretsStore/Error.pm",

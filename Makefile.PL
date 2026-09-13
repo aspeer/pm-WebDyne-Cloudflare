@@ -22,6 +22,12 @@ WriteMakefile(
         'Test::More' => 0.88,
     },
     PM => {
+        'lib/WebDyne/Cloudflare/DurableObject.pm' => '$(INST_LIB)/WebDyne/Cloudflare/DurableObject.pm',
+        'lib/WebDyne/Cloudflare/DurableObject/Context.pm' => '$(INST_LIB)/WebDyne/Cloudflare/DurableObject/Context.pm',
+        'lib/WebDyne/Cloudflare/DurableObject/Handler.pm' => '$(INST_LIB)/WebDyne/Cloudflare/DurableObject/Handler.pm',
+        'lib/WebDyne/Cloudflare/DurableObject/Bytes.pm' => '$(INST_LIB)/WebDyne/Cloudflare/DurableObject/Bytes.pm',
+        'lib/WebDyne/Cloudflare/DurableObject/Error.pm' => '$(INST_LIB)/WebDyne/Cloudflare/DurableObject/Error.pm',
+
         'lib/WebDyne/Cloudflare/SecretsStore.pm' => '$(INST_LIB)/WebDyne/Cloudflare/SecretsStore.pm',
         'lib/WebDyne/Cloudflare/SecretsStore/Error.pm' => '$(INST_LIB)/WebDyne/Cloudflare/SecretsStore/Error.pm',
         'lib/WebDyne/Cloudflare.pm'              => '$(INST_LIB)/WebDyne/Cloudflare.pm',

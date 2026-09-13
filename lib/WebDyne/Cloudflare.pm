@@ -6,7 +6,7 @@ use warnings;
 use Encode qw(decode FB_CROAK);
 use Scalar::Util qw(refaddr);
 
-our $VERSION='0.004';
+our $VERSION='0.005';
 
 sub json_value {
     my ($value_ref, $seen_hr)=@_;

@@ -281,3 +281,33 @@ ZeroPerl 1.0.12: generated Worker build, Wrangler dry run, and ten local Perl/WA
 HTTP requests including bookmark continuation and eight concurrent requests.
 No ZeroPerl source changes were needed. Remote replication and replica-lag
 behavior were not exercised; no Cloudflare database settings were changed.
+
+## Durable Objects qualification
+
+`npm test` includes Perl API tests and JavaScript tests for typed values, native
+and framework RPC, capability expiry, transaction rollback, result limits,
+serialization and runtime retirement. JavaScript SQL unit tests use Node 24+
+`node:sqlite` to exercise real SQLite rollback.
+
+For end-to-end workerd/Perl qualification, install Wrangler 4.131.1 using the
+lockfile and run:
+
+```sh
+node t.js/qualify-durable-objects.mjs /absolute/path/to/runtime.tgz
+```
+
+The script packs the current extension, creates a temporary generated project,
+checks the build, and starts local Wrangler. It checks 12 concurrent delayed
+updates without lost writes, separate object identities, one initialization per
+interpreter, batch rollback, stale capability rejection, same-object and A-B-A
+cycles, errors, nested values, Perl client RPC, and SQLite state after restarting
+the Worker. It creates no hosted resources and removes its temporary project.
+Test-only instrumentation measures WASM allocations; it does not enter the package
+API or production example. Node 24+ and an installable runtime tarball are required.
+
+Initial qualification on 2026-09-13 used current portable ZeroPerl source over the
+integrity-verified 1.0.9 WASM (the finite-invocation changes do not alter the ABI).
+Wrangler 4.131.1 passed all probes. First local call was approximately 344 ms;
+three object interpreters each had 33554432 bytes of WASM memory. This excludes
+JavaScript, VFS and the request interpreter and is not a production capacity claim.
+The release workflow rebuilds the runtime package from its tagged source.

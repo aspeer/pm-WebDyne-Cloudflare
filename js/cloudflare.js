@@ -1,3 +1,4 @@
+import { DurableObjectHostBridge, durableObjectBindingNames } from "./durable-object-host.js";
 import { SecretsStoreHostBridge, secretsStoreBindingNames } from "./secrets-store-host.js";
 import { D1HostBridge, d1BindingNames } from "./d1-host.js";
 import { KVHostBridge, kvBindingNames } from "./kv-host.js";
@@ -55,6 +56,8 @@ export function createWebDyneCloudflareExtension(options = {}) {
   const configuredR2Bindings = configuredBindingNames(options, "r2Bindings", r2BindingNames);
   const configuredHyperdriveBindings = configuredBindingNames(options, "hyperdriveBindings", hyperdriveBindingNames);
   const configuredSecretsStoreBindings = configuredBindingNames(options, "secretsStoreBindings", secretsStoreBindingNames);
+  const durableNames = configuredBindingNames(options, "durableObjectBindings", durableObjectBindingNames);
+  const durableObject = new DurableObjectHostBridge({ nativeBindings: options.durableObjectNativeBindings });
   const secretsStore = new SecretsStoreHostBridge();
   const d1 = new D1HostBridge();
   const kv = new KVHostBridge({ maxValueBytes: options.kvMaxValueBytes });
@@ -65,6 +68,7 @@ export function createWebDyneCloudflareExtension(options = {}) {
     name: "@webdyne/webdyne-cloudflare",
 
     register(perl) {
+      durableObject.register(perl);
       secretsStore.register(perl);
       d1.register(perl);
       kv.register(perl);
@@ -72,9 +76,10 @@ export function createWebDyneCloudflareExtension(options = {}) {
       if (options.hyperdriveClientFactory || configuredHyperdriveBindings?.length) hyperdrive.register(perl);
     },
 
-    attachScope({ scope, bindings, request, lifecycle }) {
+    attachScope({ scope, bindings, request, lifecycle, invocation }) {
       const attachments = [];
       try {
+        attachments.push(durableObject.attachScope(scope, bindings, durableNames ?? [], invocation));
         attachments.push(secretsStore.attachScope(scope, bindings,
           configuredSecretsStoreBindings ?? secretsStoreBindingNames(bindings?.WEBDYNE_SECRETS_STORE_BINDINGS)));
         attachments.push(d1.attachScope(

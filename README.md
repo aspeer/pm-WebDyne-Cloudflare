@@ -541,3 +541,13 @@ D1 now supports opt-in `with_session()` and `get_bookmark()` through the
 Use a session for replica reads and carry its bookmark between related requests.
 Existing D1 calls retain primary-only routing. Enable replication separately
 in Cloudflare database settings.
+
+## Durable Objects
+
+Version 1.7.0 adds RPC clients and Perl-defined, SQLite-backed Durable Objects with
+ZeroPerl 1.0.13+ and Wrangler 4.131.1. Start with
+[the counter example](examples/durable-objects/README.md) and
+[the module API](lib/WebDyne/Cloudflare/DurableObject.pm.md).
+Each active object owns an isolated interpreter; finite invocations run serially
+with expiring capabilities. Atomic SQL batches are supported. Alarms, hibernating
+WebSockets and callback transactions are deferred.
