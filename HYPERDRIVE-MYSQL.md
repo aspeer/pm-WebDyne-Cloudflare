@@ -82,15 +82,12 @@ requalified when upgrading the pinned driver.
 
 ## Release
 
-Implementation and qualification are complete on `codex/hyperdrive-mysql`.
-Release is paused for owner clarification: fetching GitHub on 2026-09-13 showed
-`main` had moved backwards from the previously qualified PostgreSQL commit
-`b1bb30e9bf8da576b703e73370619d1942433d2b` to its parent
-`02310f873c04bec322091a6babfc9136856b51eb`. Both earlier PostgreSQL build/staging
-runs still show success. Publishing this branch would restore that PostgreSQL
-commit along with MySQL. No merge or push has been performed for this release.
-All three temporary Workers were deleted, both containers stopped, and local
-qualification secret files removed after successful testing.
+The complete PostgreSQL and MySQL implementation targets version 1.4.0.
+Gitea (`origin`) is authoritative and mirrors to GitHub. Push merged main to
+Gitea, verify the same commit on GitHub, then run GitHub qualification and npm
+staging against that commit. Do not push source changes directly to the mirror.
+ZeroPerl 1.0.11 needs no changes for this release.
 
-Once clarified, merge and use the existing GitHub qualification and npm staging
-workflows. npm publication remains pending the owner's manual approval.
+All three temporary Workers were deleted, both containers stopped, and local
+qualification secret files removed after successful testing. npm publication
+remains pending the owner's manual approval after staging.

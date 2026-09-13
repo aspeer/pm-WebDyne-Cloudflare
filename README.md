@@ -424,10 +424,15 @@ paths for custom Workers.
 
 ## Release packaging
 
-This README describes current main. The UTF-8 normalization and numeric-body
-fixes are source changes for the next package release; the existing 1.2.0
-publication is not replaced by merging them. Select a new package version
-before running the release workflow.
+Gitea (`origin`) is the authoritative repository; GitHub is its push mirror.
+Merge source changes into main and push with `git push origin main`. Verify
+that GitHub main has the same commit before dispatching its release workflows.
+Requests to "push to GitHub" mean publishing through Gitea, not pushing directly
+to the mirror. Configure local main to track `origin/main`.
+
+For build and npm staging without creating mirror-local tags, run the release
+workflow with `publish_release=false`, then stage using its `source_run_id`.
+Version 1.4.0 includes PostgreSQL and MySQL Hyperdrive support.
 
 `npm run pack:check` verifies the exact public package allow-list. The
 `WebDyne Cloudflare release` GitHub workflow runs the Perl and JavaScript
