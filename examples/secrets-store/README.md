@@ -9,8 +9,8 @@ new directory and work there:
 cp -R examples/secrets-store /tmp/webdyne-secrets-store-example
 cd /tmp/webdyne-secrets-store-example
 npm install
-npm run setup:local
 npm run check
+npm run setup:local
 npm run dev
 ```
 
@@ -22,11 +22,13 @@ installed from npm by `npm install`.
 
 ## What to expect
 
-`setup:local` builds the Worker configuration and creates a dummy secret in
-Wrangler's local store. It explicitly selects `--remote=false`, needs no login,
-and uses the fixed non-secret test value `webdyne-test-dummy-do-not-render`.
-The store ID and name match package.json. The command can be rerun; it restores
-the dummy value for this local demo. Local persistence lives in `.wrangler`.
+`check` builds and dry-runs the Worker, creating `.webdyne/wrangler.jsonc`.
+`setup:local` then rebuilds the Worker artifacts and creates a dummy secret in
+Wrangler's local store using that configuration. It explicitly selects
+`--remote=false`, needs no login, and uses the fixed non-secret test value
+`webdyne-test-dummy-do-not-render`. The store ID and name match package.json.
+The setup command can be rerun after `check`; it restores the dummy value for
+this local demo. Local persistence lives in `.wrangler`.
 
 The default WebDyne page renders `Secret retrieval succeeded`. It never returns
 the value or its length, and its cache policy includes `no-store`.

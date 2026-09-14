@@ -27,9 +27,10 @@ npm run dev
 The examples require ZeroPerl 1.0.14+ and WebDyne::Cloudflare 1.7.1+.
 `npm install` installs the released packages from npm.
 
-`npm run check` generates and dry-runs the Worker. `npm run build` only generates
-it. Service READMEs list any database schema or local secret setup required before
-requests work. The default URL is printed by the development command.
+`npm run check` generates the Worker and its Wrangler configuration, then performs
+a dry run. `npm run build` generates only the Worker artifacts. Service READMEs
+list any database schema or local secret setup required before requests work. The
+default URL is printed by the development command.
 
 ## Local service setup
 
@@ -39,9 +40,10 @@ loopback port. Use `npm run db:up`, `npm run check:local`, and `npm run dev:loca
 `db:down` preserves database data; `db:reset` deletes and reseeds that example's
 volume. The local helpers deliberately use demo credentials and a loopback URL.
 
-Secrets Store uses `npm run setup:local` to build its configuration and create a
-fixed dummy secret with remote access explicitly disabled. D1/KV/R2 and Durable
-Objects use Wrangler's local implementations; they need no Docker services.
+For Secrets Store, run `npm run check` to generate the Wrangler configuration,
+then `npm run setup:local` to create a fixed dummy secret with remote access
+explicitly disabled. D1/KV/R2 and Durable Objects use Wrangler's local
+implementations; they need no Docker services.
 
 ## Native PAGI alternatives
 

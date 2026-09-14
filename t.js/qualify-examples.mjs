@@ -137,6 +137,7 @@ try{
             }
             if(name==='durable-objects')assert.equal(JSON.parse((await request('/',{method:'POST'})).body).value,2);
             await stop();
+            if(name==='durable-objects')assert.doesNotMatch(log,/Failed to drain the unused request body/);
         }
         if(database&&useCompose){
             const count=()=>{

@@ -75,7 +75,7 @@ try{
   assert.deepEqual(await client.json(),{value:1});
   const memory=await (await fetch(`${base}/memory`)).json();
   console.log(JSON.stringify({phase:'warm',coldMs,wasmBytes:memory,tests:'concurrency, isolation, atomic rollback, stale capability, call cycles, errors, serialization, Perl client RPC'}));
-  await stop();await start();
+  await stop();assert.doesNotMatch(log,/Failed to drain the unused request body/);await start();
   const restored=await call('one','read');assert.equal(restored.result.value,12);assert.equal(restored.result.starts,1);
   console.log(JSON.stringify({phase:'restart',restored:restored.result,tests:'SQLite persistence and repeatable initialization after Worker restart'}));
 } catch(error){console.error(log);throw error;}
