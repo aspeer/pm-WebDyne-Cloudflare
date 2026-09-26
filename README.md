@@ -5,6 +5,31 @@ Use Cloudflare services from WebDyne PSP pages or native PAGI applications under
 The npm package `@webdyne/webdyne-cloudflare` includes both the Perl modules and
 JavaScript adapters. No separate CPAN installation is required in the Worker.
 
+## GitHub Attestations
+
+The release workflows generate [GitHub artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
+for release archives. Install the [GitHub CLI](https://cli.github.com/) with
+`gh attestation` support and authenticate with `gh auth login`.
+
+Download the npm package with `npm pack`, replace `VERSION`, and verify the
+resulting archive with:
+
+```sh
+npm pack @webdyne/webdyne-cloudflare@VERSION
+gh attestation verify webdyne-webdyne-cloudflare-VERSION.tgz --repo aspeer/pm-WebDyne-Cloudflare
+```
+
+For a CPAN distribution archive, use:
+
+```sh
+gh attestation verify WebDyne-Cloudflare-VERSION.tar.gz --repo aspeer/pm-WebDyne-Cloudflare
+```
+
+A successful verification confirms that the archive's checksum matches an
+attestation from this repository. Attestations cover archives produced by the
+attestation-enabled release workflows. Older releases and GitHub's
+automatically generated source-code archives are not covered.
+
 | Service | Perl API | WebDyne example |
 | --- | --- | --- |
 | D1 queries and atomic batches | [D1](lib/WebDyne/Cloudflare/D1.pm.md) | [Storage](examples/storage/README.md) |
@@ -119,7 +144,7 @@ npm run pack:check
 - [Examples](examples/README.md): runnable applications, separate from regression fixtures.
 - [Testing](TEST.md): contract, package and Worker integration commands.
 - [Qualification record](docs/qualification.md): dated evidence and explicit limits.
-- [Release and staging](docs/releasing.md): Gitea source, GitHub qualification and npm MFA handoff.
+- [Release and staging](docs/releasing.md): GitHub qualification, attestations and npm MFA handoff.
 - `t/`: Perl tests, fixtures and maintained integration harnesses.
 - `t.js/`: JavaScript tests, smoke runners and package checks.
 

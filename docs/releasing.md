@@ -1,12 +1,11 @@
 # Release and npm staging
 
-Gitea (`origin`) is the authoritative repository; GitHub is its push mirror.
-Merge source changes into main and push with `git push origin main`. Verify
-that GitHub main has the same commit before dispatching its release workflows.
-Requests to "push to GitHub" mean publishing through Gitea, not pushing directly
-to the mirror. Configure local main to track `origin/main`.
+The public release source is the
+[GitHub repository](https://github.com/aspeer/pm-WebDyne-Cloudflare). Verify
+that GitHub `main` contains the intended commit before dispatching its release
+workflows.
 
-For build and npm staging without creating mirror-local tags, run the release
+For build and npm staging without creating release tags, run the release
 workflow with `publish_release=false`, then stage using its `source_run_id`.
 
 `npm run pack:check` verifies the exact public package allow-list. The

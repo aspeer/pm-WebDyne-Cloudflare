@@ -1,11 +1,16 @@
 .github/workflows/webdyne-cloudflare-npm.yml
 .github/workflows/webdyne-cloudflare-release.yml
+.github/workflows/security.yml
+.github/workflows/webdyne-cloudflare-cpan.yml
+.github/dependabot.yml
 Changes
+CONTRIBUTING.md
 LICENSE
 MANIFEST
 MANIFEST.SKIP
 Makefile.PL
 README.md
+SECURITY.md
 TEST.md
 docs/configuration.md
 docs/qualification.md

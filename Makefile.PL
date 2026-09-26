@@ -52,6 +52,17 @@ WriteMakefile(
     },
     META_MERGE => {
         'meta-spec' => { version => 2 },
+        resources => {
+            homepage => 'https://github.com/aspeer/pm-WebDyne-Cloudflare',
+            repository => {
+                type => 'git',
+                url  => 'https://github.com/aspeer/pm-WebDyne-Cloudflare.git',
+                web  => 'https://github.com/aspeer/pm-WebDyne-Cloudflare',
+            },
+            bugtracker => {
+                web => 'https://github.com/aspeer/pm-WebDyne-Cloudflare/issues',
+            },
+        },
         x_authority => 'cpan:ASPEER',
     },
 );
