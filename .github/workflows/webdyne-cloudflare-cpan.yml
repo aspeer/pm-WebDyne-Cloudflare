@@ -35,8 +35,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes libfuture-perl libfuture-asyncawait-perl
+          cpanm --notest --installdeps .
           npm ci --ignore-scripts
 
       - name: Validate release tag
